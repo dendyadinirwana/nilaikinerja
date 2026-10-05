@@ -258,10 +258,14 @@ final class WindowBridge: ObservableObject {
         // follows the panel, so it has to keep observing the same changes.
         hoverState.$isOver
             .combineLatest(hoverState.$pinnedStorage)
-            .map { over, pinned in over || pinned }
-            .removeDuplicates()
-            .sink { [weak self] expanded in
-                self?.controller?.setInteractive(expanded: expanded)
+            // No `removeDuplicates` here: the two inputs must stay separable,
+            // because the window needs to know whether the panel is expanded
+            // *and* whether that was deliberate. A pinned panel must survive the
+            // idle timer; a hover-opened one must not. Filtering on the combined
+            // flag would throw away exactly the distinction that matters.
+            // `setInteractive` is idempotent, so repeated values are harmless.
+            .sink { [weak self] over, pinned in
+                self?.controller?.setInteractive(expanded: over || pinned, pinned: pinned)
             }
             .store(in: &cancellables)
     }

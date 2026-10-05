@@ -527,8 +527,7 @@ final class NotchWindowController: NSObject {
             if panel?.ignoresMouseEvents == true {
                 panel?.ignoresMouseEvents = false
             }
-            collapseWorkItem?.cancel()
-            collapseWorkItem = nil
+            disarmAutoCollapse()
             if openWorkItem == nil {
                 if openDelay <= 0 {
                     onHoverChange?(true)
@@ -580,7 +579,14 @@ final class NotchWindowController: NSObject {
     /// region now comes from `setPresented(size:expanded:)`, which the view
     /// calls on every size change; this only guarantees the panel is key when
     /// it is pinned open.
-    func setInteractive(expanded: Bool) {
+    /// - Parameter pinned: a pinned panel was opened deliberately (menu bar), so
+    ///   the idle timer must not close it.
+    func setInteractive(expanded: Bool, pinned: Bool = false) {
+        if expanded && !pinned {
+            armAutoCollapse()
+        } else {
+            disarmAutoCollapse()
+        }
         guard let metrics else { return }
         if presentedSize == .zero {
             let size = expanded ? NotchGeometry.fallbackExpandedSize : metrics.collapsed
@@ -640,6 +646,57 @@ final class NotchWindowController: NSObject {
             collapseWorkItem = work
             DispatchQueue.main.asyncAfter(deadline: .now() + collapseDelay, execute: work)
         }
+    }
+
+    // MARK: - Auto-collapse
+
+    /// Schedules the panel to close once `collapseDelay` has passed with the
+    /// pointer nowhere near it.
+    ///
+    /// This exists because nothing else covered the case where the panel opens
+    /// without the pointer ever entering it. Both previous collapse sites were
+    /// driven by "pointer moved outside", so a panel opened by a drop — or one
+    /// left open when the pointer left without a final mouse-moved — had no timer
+    /// waiting for it and simply stayed open. `hoverCloseDelay` from Settings is
+    /// the delay used here, which is what that setting has always meant in
+    /// practice.
+    private func armAutoCollapse() {
+        collapseWorkItem?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            self?.collapseWorkItem = nil
+            self?.performAutoCollapse()
+        }
+        collapseWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + collapseDelay, execute: work)
+    }
+
+    /// Cancels a pending auto-collapse. Called whenever the pointer arrives, so
+    /// the timer never fires while the user is actually looking at the panel.
+    private func disarmAutoCollapse() {
+        collapseWorkItem?.cancel()
+        collapseWorkItem = nil
+    }
+
+    /// Re-checks the world at fire time rather than trusting whatever was true
+    /// when the timer was armed — a mouse-moved arriving in the gap is enough
+    /// to make the earlier decision wrong.
+    private func performAutoCollapse() {
+        guard let panel else { return }
+
+        guard !NSMouseInRect(NSEvent.mouseLocation, interactiveRect, false) else {
+            // Pointer came back while the timer was pending. Hover owns the
+            // panel from here.
+            return
+        }
+        guard !dragArmed, !dragHoldingOpen else {
+            // A live drag outranks the timer.
+            armAutoCollapse()
+            return
+        }
+
+        NSLog("[Hover] auto-collapse fired — pointer absent")
+        panel.ignoresMouseEvents = true
+        onHoverChange?(false)
     }
 
     // MARK: - Display changes
