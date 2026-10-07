@@ -164,4 +164,7 @@ extension Notification.Name {
     /// notch canvas, so the drop opens the add-activity form with the files
     /// attached.
     static let notchDroppedFiles = Notification.Name("id.simbang.notch.droppedFiles")
+    static let notchDropCelebrated = Notification.Name("id.simbang.notch.dropCelebrated")
+    static let notchDragHoverChanged = Notification.Name("id.simbang.notch.dragHoverChanged")
+    static let notchFilesDelivered = Notification.Name("id.simbang.notch.filesDelivered")
 }

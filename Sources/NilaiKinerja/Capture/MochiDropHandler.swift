@@ -42,6 +42,11 @@ enum MochiDropHandler {
 
         // Expand the notch panel so user sees Mochi and the form immediately
         NotificationCenter.default.post(name: .notchExpandPanel, object: nil)
+        NotificationCenter.default.post(
+            name: .notchDropCelebrated,
+            object: nil,
+            userInfo: ["title": cleanedTitle]
+        )
         NSSound(named: "Glass")?.play()
 
         return (true, cleanedTitle)

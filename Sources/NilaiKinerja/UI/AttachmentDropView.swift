@@ -62,6 +62,7 @@ final class DropView: NSView {
         onHover?(false)
         let urls = Self.urls(from: sender)
         guard !urls.isEmpty else { return false }
+        NotificationCenter.default.post(name: .notchFilesDelivered, object: nil)
         onDrop?(urls)
         return true
     }

@@ -50,6 +50,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // released onto the desktop and macOS grows a Finder tile there.
         controller.onDragHover = { [weak self] dragging in
             self?.bridge.hoverState.setDrag(dragging)
+            NotificationCenter.default.post(
+                name: .notchDragHoverChanged,
+                object: nil,
+                userInfo: ["isHovering": dragging]
+            )
         }
         // A cancelled drag must not leave the panel pinned open. Only a pin that
         // came from a drop is released; a menu-bar pin is deliberate and stays.

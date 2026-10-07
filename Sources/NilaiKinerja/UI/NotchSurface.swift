@@ -214,14 +214,6 @@ struct NotchSurface: View {
                 .padding(.trailing, 16)
         }
         .frame(width: collapsedSize.width, height: collapsedSize.height)
-        .background(
-            AttachmentDropView(
-                onHover: { _ in },
-                onDrop: { urls in
-                    MochiDropHandler.handleDrop(urls: urls, coordinator: coordinator, mode: mode)
-                }
-            )
-        )
     }
 
     private var taskCountCluster: some View {

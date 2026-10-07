@@ -38,13 +38,16 @@ final class NotchHostingView<Content: View>: NSHostingView<Content> {
     var onDropDelivered: (() -> Void)?
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        // A drag has to be routed to *this* view, and AppKit picks the
-        // destination purely by what `hitTest` returns under the pointer. While
-        // a drag is in flight we claim every point: no clicks can land during
-        // a drag, so bypassing the click-through gate costs nothing, and
-        // claiming the point is the only way this registered destination is
-        // ever consulted instead of the Finder Desktop underneath.
-        if isDragArmed { return self }
+        // While a drag is in flight, if a specific drop destination (like a
+        // dashed attachment box inside a form) claims the point, yield to it.
+        // Otherwise, claim the point for this hosting view so general notch drops
+        // land here instead of the Finder Desktop underneath.
+        if isDragArmed {
+            if let hit = super.hitTest(point), hit !== self, hit is DropView {
+                return hit
+            }
+            return self
+        }
 
         guard let isPointInteractive else { return super.hitTest(point) }
         // The point arrives in the superview's coordinates. Treating it as
@@ -106,6 +109,7 @@ final class NotchHostingView<Content: View>: NSHostingView<Content> {
         }
         NSLog("[Drag] performDragOperation — accepted \(urls.count) file(s): \(urls.map { $0.lastPathComponent }.joined(separator: ", "))")
         onDropDelivered?()
+        NotificationCenter.default.post(name: .notchFilesDelivered, object: nil)
         onDropURLs?(urls)
         return true
     }
@@ -272,6 +276,13 @@ final class NotchWindowController: NSObject {
             }
         }
         hostingView.onDropDelivered = { [weak self] in
+            self?.noteDragDeliveredFiles()
+        }
+        NotificationCenter.default.addObserver(
+            forName: .notchFilesDelivered,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
             self?.noteDragDeliveredFiles()
         }
         hostingView.onDropURLs = { [weak self] urls in

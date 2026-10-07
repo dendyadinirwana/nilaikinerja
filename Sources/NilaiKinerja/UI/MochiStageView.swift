@@ -190,21 +190,17 @@ struct MochiStageView: View {
                 }
             }
         }
-        .background(
-            AttachmentDropView(
-                onHover: { hovering in
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                        mochi.isDragOver = hovering
-                    }
-                },
-                onDrop: { urls in
-                    let result = MochiDropHandler.handleDrop(urls: urls, coordinator: coordinator, mode: mode)
-                    if result.success {
-                        mochi.reactToDrop(title: result.title)
-                    }
-                }
-            )
-        )
+        .onReceive(NotificationCenter.default.publisher(for: .notchDragHoverChanged)) { note in
+            let isHovering = note.userInfo?["isHovering"] as? Bool ?? false
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                mochi.isDragOver = isHovering
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .notchDropCelebrated)) { note in
+            if let title = note.userInfo?["title"] as? String {
+                mochi.reactToDrop(title: title)
+            }
+        }
     }
 
     // MARK: - Vector Drawing Helpers
