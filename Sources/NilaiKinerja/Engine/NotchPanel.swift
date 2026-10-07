@@ -211,7 +211,7 @@ final class NotchWindowController: NSObject {
 
     private func trace(_ message: String) {
         guard tracesHitTest else { return }
-        NSLog("[Hit] \(message) rect=\(interactiveRectDescription) ignores=\(panel?.ignoresMouseEvents ?? false)")
+        NKLog("[Hit] \(message) rect=\(interactiveRectDescription) ignores=\(panel?.ignoresMouseEvents ?? false)")
     }
 
     /// The size the SwiftUI surface is actually presenting right now. Fed by
@@ -378,7 +378,7 @@ final class NotchWindowController: NSObject {
         if panel?.ignoresMouseEvents == true {
             panel?.ignoresMouseEvents = false
         }
-        NSLog("[Drag] began — window armed as drop destination")
+        NKLog("[Drag] began — window armed as drop destination")
     }
 
     /// A window with `ignoresMouseEvents = true` receives no drag events at
@@ -471,7 +471,7 @@ final class NotchWindowController: NSObject {
             if panel?.ignoresMouseEvents == true {
                 panel?.ignoresMouseEvents = false
             }
-            NSLog("[Drag] began — window armed as drop destination")
+            NKLog("[Drag] began — window armed as drop destination")
 
         case .dragEnded:
             endDragHold()
@@ -490,7 +490,7 @@ final class NotchWindowController: NSObject {
             openWorkItem = nil
             if decision == .enterZone {
                 dragHoldingOpen = true
-                NSLog("[Drag] entered notch zone — expanding panel")
+                NKLog("[Drag] entered notch zone — expanding panel")
                 onDragHover?(true)
             }
         }
@@ -504,7 +504,7 @@ final class NotchWindowController: NSObject {
         mirrorDragArmed?(false)
         let delivered = dragDeliveredFiles
         dragDeliveredFiles = false
-        NSLog("[Drag] released — wasOpen=\(wasOpen) delivered=\(delivered) mouseInsideRect=\(NSMouseInRect(NSEvent.mouseLocation, interactiveRect, false))")
+        NKLog("[Drag] released — wasOpen=\(wasOpen) delivered=\(delivered) mouseInsideRect=\(NSMouseInRect(NSEvent.mouseLocation, interactiveRect, false))")
         if wasOpen { onDragHover?(false) }
         // A drag that ended without files was cancelled. It may still have
         // pinned the panel on its way through `MochiDropHandler` (the SwiftUI
@@ -532,7 +532,7 @@ final class NotchWindowController: NSObject {
         // file in noise and make it useless for reading a drag sequence.
         if inside != lastHoverInside {
             lastHoverInside = inside
-            NSLog("[Hover] inside=\(inside) dragArmed=\(dragArmed) holding=\(dragHoldingOpen)")
+            NKLog("[Hover] inside=\(inside) dragArmed=\(dragArmed) holding=\(dragHoldingOpen)")
         }
         if inside {
             if panel?.ignoresMouseEvents == true {
@@ -558,7 +558,7 @@ final class NotchWindowController: NSObject {
                 let work = DispatchWorkItem { [weak self] in
                     self?.collapseWorkItem = nil
                     self?.panel?.ignoresMouseEvents = true
-                    NSLog("[Hover] collapse fired — releasing panel")
+                    NKLog("[Hover] collapse fired — releasing panel")
                     self?.onHoverChange?(false)
                 }
                 collapseWorkItem = work
@@ -705,7 +705,7 @@ final class NotchWindowController: NSObject {
             return
         }
 
-        NSLog("[Hover] auto-collapse fired — pointer absent")
+        NKLog("[Hover] auto-collapse fired — pointer absent")
         panel.ignoresMouseEvents = true
         onHoverChange?(false)
     }

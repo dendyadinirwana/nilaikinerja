@@ -24,7 +24,7 @@ final class HoverState: ObservableObject {
                 .prefix(6)
                 .map { $0.components(separatedBy: " ").last ?? $0 }
                 .joined(separator: " <- ")
-            NSLog("[Panel] pinned \(newValue ? "SET" : "CLEARED") by: \(caller)")
+            NKLog("[Panel] pinned \(newValue ? "SET" : "CLEARED") by: \(caller)")
             pinnedStorage = newValue
         }
     }
@@ -67,7 +67,7 @@ final class HoverState: ObservableObject {
     /// firing 157 times while the panel stays open is indistinguishable from a
     /// correct collapse without it.
     private func logInputs(_ reason: String) {
-        NSLog("[Panel] expanded=\(isExpanded) — over=\(isOver) pinned=\(pinned) drag=\(dragActive) (\(reason))")
+        NKLog("[Panel] expanded=\(isExpanded) — over=\(isOver) pinned=\(pinned) drag=\(dragActive) (\(reason))")
     }
 
     func setOver(_ over: Bool) {
