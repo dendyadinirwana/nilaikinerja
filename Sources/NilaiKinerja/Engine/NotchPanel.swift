@@ -554,7 +554,16 @@ final class NotchWindowController: NSObject {
         } else {
             openWorkItem?.cancel()
             openWorkItem = nil
-            if collapseWorkItem == nil {
+            if !presentedExpanded {
+                // Pointer left while only in preview (idleHover). Cancel immediately
+                // so the dwell timer never promotes to expanded after the user has left.
+                collapseWorkItem?.cancel()
+                collapseWorkItem = nil
+                panel?.ignoresMouseEvents = true
+                onHoverChange?(false)
+            } else if collapseWorkItem == nil {
+                // When already expanded, apply the grace period so reaching for
+                // controls doesn't snap the panel shut mid-reach.
                 let work = DispatchWorkItem { [weak self] in
                     self?.collapseWorkItem = nil
                     self?.panel?.ignoresMouseEvents = true

@@ -89,7 +89,7 @@ final class HoverState: ObservableObject {
             let duration = dwellDuration
             dwellTask = Task { @MainActor [weak self] in
                 try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
-                guard let self, !Task.isCancelled, self.isOver, !self.pinned else { return }
+                guard let self, !Task.isCancelled, self.isOver, !self.pinned, self.visualState == .idleHover else { return }
                 withAnimation(.spring(response: 0.38, dampingFraction: 0.8)) {
                     self.visualState = .expanded
                 }
