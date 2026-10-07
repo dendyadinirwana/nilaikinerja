@@ -23,7 +23,7 @@ final class HoverState: ObservableObject {
     private var dwellTask: Task<Void, Never>?
 
     /// Duration pointer must dwell in State 2 (idleHover) before expanding to State 3.
-    var dwellDuration: TimeInterval = 2.0
+    var dwellDuration: TimeInterval = 1.0
 
     var isExpanded: Bool { visualState == .expanded }
 
@@ -85,7 +85,7 @@ final class HoverState: ObservableObject {
             withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
                 visualState = .idleHover
             }
-            // Start dwell timer (default 2.0s) to transition to State 3
+            // Start dwell timer (default 1.0s) to transition to State 3
             let duration = dwellDuration
             dwellTask = Task { @MainActor [weak self] in
                 try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
