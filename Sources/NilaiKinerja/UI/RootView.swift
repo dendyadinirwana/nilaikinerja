@@ -49,13 +49,15 @@ final class HoverState: ObservableObject {
 
     func releaseDropPin() {
         guard pinned, pinFromDrop else { return }
-        dwellTask?.cancel()
-        dwellTask = nil
         pinned = false
         pinFromDrop = false
         logInputs("releaseDropPin()")
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            visualState = isOver ? .idleHover : .idle
+        if !isOver {
+            dwellTask?.cancel()
+            dwellTask = nil
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                visualState = .idle
+            }
         }
     }
 
@@ -81,17 +83,20 @@ final class HoverState: ObservableObject {
         dwellTask = nil
 
         if over {
-            // State 1 -> State 2: Expand to capsule preview
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
-                visualState = .idleHover
-            }
-            // Start dwell timer (default 1.0s) to transition to State 3
-            let duration = dwellDuration
-            dwellTask = Task { @MainActor [weak self] in
-                try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
-                guard let self, !Task.isCancelled, self.isOver, !self.pinned, self.visualState == .idleHover else { return }
-                withAnimation(.spring(response: 0.38, dampingFraction: 0.8)) {
-                    self.visualState = .expanded
+            // If the panel is already expanded (user is clicking tabs or interacting),
+            // stay expanded! Never demote back to idleHover while user is active.
+            if visualState != .expanded {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
+                    visualState = .idleHover
+                }
+                // Start dwell timer (default 1.0s) to transition to State 3
+                let duration = dwellDuration
+                dwellTask = Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+                    guard let self, !Task.isCancelled, self.isOver, !self.pinned, self.visualState == .idleHover else { return }
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.8)) {
+                        self.visualState = .expanded
+                    }
                 }
             }
         } else {
@@ -121,7 +126,11 @@ final class HoverState: ObservableObject {
                 // Dragging a file bypasses State 2 and opens State 3 immediately
                 visualState = .expanded
             } else if !pinned {
-                visualState = isOver ? .idleHover : .idle
+                // When drag ends, only collapse if pointer is outside.
+                // If pointer is inside an already expanded panel, stay expanded!
+                if !isOver {
+                    visualState = .idle
+                }
             }
         }
     }

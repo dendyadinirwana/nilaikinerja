@@ -420,6 +420,12 @@ enum SelfTest {
         check("expandNow promotes to expanded", hover.visualState == .expanded)
         check("expanded state isExpanded is true", hover.isExpanded)
 
+        // Interacting with header tabs or UI clicks must not demote expanded state
+        hover.setDrag(false)
+        check("ending drag while over does not demote expanded", hover.visualState == .expanded)
+        hover.setOver(true)
+        check("subsequent hover while over does not demote expanded", hover.visualState == .expanded)
+
         hover.setOver(false)
         check("leaving expanded collapses back to idle", hover.visualState == .idle)
 
