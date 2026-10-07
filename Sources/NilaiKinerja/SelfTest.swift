@@ -40,6 +40,7 @@ enum SelfTest {
         testMonthlyReport()
         testReportEscaping()
         testDragDecisionTable()
+        testVisualStateTransitions()
 
         print("")
         if failures.isEmpty {
@@ -396,6 +397,42 @@ enum SelfTest {
             check("monthly report did not throw (\(error))", false)
         }
         try? FileManager.default.removeItem(at: url)
+    }
+
+    // MARK: - 3-State Notch Visual Transitions
+
+    private static func testVisualStateTransitions() {
+        print("\n— 3-state notch visual transitions —")
+        let hover = HoverState()
+
+        check("initial state is idle", hover.visualState == .idle)
+        check("idle is not expanded", !hover.isExpanded)
+
+        hover.setOver(true)
+        check("hover enters idleHover state", hover.visualState == .idleHover)
+        check("idleHover is not expanded", !hover.isExpanded)
+
+        hover.setOver(false)
+        check("leaving before dwell returns to idle", hover.visualState == .idle)
+
+        hover.setOver(true)
+        hover.expandNow()
+        check("expandNow promotes to expanded", hover.visualState == .expanded)
+        check("expanded state isExpanded is true", hover.isExpanded)
+
+        hover.setOver(false)
+        check("leaving expanded collapses back to idle", hover.visualState == .idle)
+
+        hover.setDrag(true)
+        check("drag bypasses idleHover and opens expanded directly", hover.visualState == .expanded)
+
+        hover.setDrag(false)
+        check("ending drag returns to idle", hover.visualState == .idle)
+
+        hover.pinned = true
+        check("pinning sets expanded state", hover.visualState == .expanded)
+        hover.pinned = false
+        check("unpinning returns to idle", hover.visualState == .idle)
     }
 
     private static func testDragDecisionTable() {

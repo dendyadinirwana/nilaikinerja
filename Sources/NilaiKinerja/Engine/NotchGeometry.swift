@@ -78,9 +78,11 @@ enum NotchGeometry {
     static let canvasSize = CGSize(width: 1200, height: 680)
 
     struct Metrics {
-        /// Size of the collapsed capsule. Deliberately wider than the physical
-        /// notch: a capsule exactly as wide as the cutout gets entirely
-        /// swallowed by it, leaving no room for the character or the timer.
+        /// Physical cutout size of the notch (without overhang).
+        /// Used for State 1 (Idle: native MacBook M4 notch with glowing stroke).
+        var hardwareNotch: CGSize
+        /// Size of the collapsed capsule with overhang (mini mochi & counter).
+        /// Used for State 2 (Idle Hover: capsule preview).
         var collapsed: CGSize
         /// True when the display has a real hardware notch. Drives the shape:
         /// a notched display gets straight inner edges (it merges into the
@@ -116,11 +118,9 @@ enum NotchGeometry {
             if notchWidth > 0, height > 0 {
                 let overhang = notchWidth * collapsedOverhangRatio
                 return Metrics(
+                    hardwareNotch: CGSize(width: notchWidth, height: height),
                     collapsed: CGSize(
                         width: min(notchWidth + overhang * 2, screen.frame.width - 24),
-                        // Match the hardware height rather than growing past
-                        // it. A capsule taller than the notch stops reading as
-                        // "the notch" and starts reading as a widget.
                         height: height
                     ),
                     isNotched: true,
@@ -130,6 +130,7 @@ enum NotchGeometry {
         }
         // Notchless display: no cutout to echo, so a full pill is correct.
         return Metrics(
+            hardwareNotch: fallbackSize,
             collapsed: CGSize(
                 width: (fallbackSize.width * (1 + collapsedOverhangRatio * 2)).rounded(),
                 height: fallbackSize.height

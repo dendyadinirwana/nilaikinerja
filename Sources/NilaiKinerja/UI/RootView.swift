@@ -2,91 +2,127 @@ import AppKit
 import SwiftUI
 import Combine
 
+/// Visual presentation states for the 3-state MacBook M4 notch.
+enum NotchVisualState: Equatable {
+    /// State 1: Native notch cutout with glowing accent stroke. Mini Mochi and counter hidden.
+    case idle
+    /// State 2: Capsule preview with Mini Mochi and counter (~2s dwell timer).
+    case idleHover
+    /// State 3: Full expanded panel (home, activities, chat, forms).
+    case expanded
+}
+
 /// Hover and pin state, shared between the window controller and the view.
 @MainActor
 final class HoverState: ObservableObject {
+    @Published private(set) var visualState: NotchVisualState = .idle
     @Published private(set) var isOver: Bool = false
-    /// Set when the user opens the panel from the menu bar. A pinned panel
-    /// stays open until explicitly dismissed.
-    ///
-    /// Every write is logged with its caller. `pinned` is the one flag that can
-    /// hold the panel open forever — `setOver` refuses to touch `isOver` while
-    /// it is set — so a single stray `true` turns every later collapse into a
-    /// no-op. The log showed 27 "BLOCKED by pinned" messages with no drop ever
-    /// accepted, which proved the write came from somewhere nobody had looked.
+    @Published var dragActive: Bool = false
     @Published fileprivate var pinnedStorage = false
+
+    private var dwellTask: Task<Void, Never>?
+
+    /// Duration pointer must dwell in State 2 (idleHover) before expanding to State 3.
+    var dwellDuration: TimeInterval = 2.0
+
+    var isExpanded: Bool { visualState == .expanded }
 
     var pinned: Bool {
         get { pinnedStorage }
         set {
             guard pinnedStorage != newValue else { return }
-            let caller = Thread.callStackSymbols
-                .prefix(6)
-                .map { $0.components(separatedBy: " ").last ?? $0 }
-                .joined(separator: " <- ")
-            NKLog("[Panel] pinned \(newValue ? "SET" : "CLEARED") by: \(caller)")
+            dwellTask?.cancel()
+            dwellTask = nil
             pinnedStorage = newValue
+            NKLog("[Panel] pinned \(newValue ? "SET" : "CLEARED")")
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.8)) {
+                if newValue {
+                    visualState = .expanded
+                } else {
+                    visualState = isOver ? .idleHover : .idle
+                }
+            }
         }
     }
 
-    /// True when the current pin came from a file drop rather than from the
-    /// menu bar.
-    ///
-    /// `pinned` is sticky by design — a panel the user opened deliberately from
-    /// the menu bar should not close on its own. But a drop pin is different: a
-    /// cancelled drag that happened to end over the panel still routed through
-    /// `MochiDropHandler`, which pinned it, and with no release path the panel
-    /// stayed open forever and the `hoverCloseDelay` setting stopped applying
-    /// entirely. Tracking the source is what lets a cancelled drag undo its own
-    /// pin without also closing a panel the user opened on purpose.
     @Published private(set) var pinFromDrop = false
 
-    /// Releases a pin that a drop put there. No-op for a menu-bar pin.
     func releaseDropPin() {
         guard pinned, pinFromDrop else { return }
+        dwellTask?.cancel()
+        dwellTask = nil
         pinned = false
         pinFromDrop = false
         logInputs("releaseDropPin()")
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            visualState = isOver ? .idleHover : .idle
+        }
     }
 
     func setPinned(_ value: Bool, fromDrop: Bool) {
         pinFromDrop = value && fromDrop
         pinned = value
     }
-    /// True while a file drag is over the notch. A drag session consumes
-    /// mouse-moved events, so this is the only signal that can open the panel
-    /// while a file is being dragged in — without it the release lands on the
-    /// desktop and spawns a Finder tile instead.
-    @Published var dragActive: Bool = false
 
-    /// True when the panel should be presented, from any source.
-    var isExpanded: Bool { isOver || pinned || dragActive }
-
-    /// Logged on every change. This is the only place that can say *which* of
-    /// the three inputs is holding the panel open — `onHoverChange(false)`
-    /// firing 157 times while the panel stays open is indistinguishable from a
-    /// correct collapse without it.
     private func logInputs(_ reason: String) {
-        NKLog("[Panel] expanded=\(isExpanded) — over=\(isOver) pinned=\(pinned) drag=\(dragActive) (\(reason))")
+        NKLog("[Panel] state=\(visualState) over=\(isOver) pinned=\(pinned) drag=\(dragActive) (\(reason))")
     }
 
     func setOver(_ over: Bool) {
-        // A pin outranks a pointer that merely left the panel.
         guard !pinned else {
             if over != isOver { logInputs("setOver(\(over)) BLOCKED by pinned") }
             return
         }
-        if over != isOver {
-            isOver = over
-            logInputs("setOver(\(over))")
+        guard over != isOver else { return }
+        isOver = over
+        logInputs("setOver(\(over))")
+
+        dwellTask?.cancel()
+        dwellTask = nil
+
+        if over {
+            // State 1 -> State 2: Expand to capsule preview
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
+                visualState = .idleHover
+            }
+            // Start dwell timer (default 2.0s) to transition to State 3
+            let duration = dwellDuration
+            dwellTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+                guard let self, !Task.isCancelled, self.isOver, !self.pinned else { return }
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.8)) {
+                    self.visualState = .expanded
+                }
+            }
+        } else {
+            // Pointer left: collapse back to State 1 (Idle)
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                visualState = .idle
+            }
         }
     }
 
-    /// Called by the window controller when a drag starts or ends.
+    func expandNow() {
+        dwellTask?.cancel()
+        dwellTask = nil
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            visualState = .expanded
+        }
+    }
+
     func setDrag(_ dragging: Bool) {
-        if dragging != dragActive {
-            dragActive = dragging
-            logInputs("setDrag(\(dragging))")
+        guard dragging != dragActive else { return }
+        dragActive = dragging
+        dwellTask?.cancel()
+        dwellTask = nil
+        logInputs("setDrag(\(dragging))")
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            if dragging {
+                // Dragging a file bypasses State 2 and opens State 3 immediately
+                visualState = .expanded
+            } else if !pinned {
+                visualState = isOver ? .idleHover : .idle
+            }
         }
     }
 }
@@ -126,11 +162,13 @@ struct RootView: View {
                     reveal: windowModel.reveal,
                     motion: motion,
                     isNotched: geometry.isNotched,
-                    isExpanded: hover.isExpanded,
+                    visualState: hover.visualState,
+                    hardwareNotchSize: geometry.hardwareNotch,
                     collapsedSize: CGSize(
                         width: CGFloat(windowModel.settings.capsuleWidth),
                         height: CGFloat(windowModel.settings.capsuleHeight)
                     ),
+                    onExpandNow: { hover.expandNow() },
                     onDrop: { urls in coordinator.attach(urls) },
                     onPresentedSize: { size, expanded in
                         windowModel.setPresentedSize(size, expanded: expanded)
@@ -256,16 +294,10 @@ final class WindowBridge: ObservableObject {
         // `pinned` is computed over `pinnedStorage`, the projection lives on the
         // stored property — and this is where the window's interactive region
         // follows the panel, so it has to keep observing the same changes.
-        hoverState.$isOver
+        hoverState.$visualState
             .combineLatest(hoverState.$pinnedStorage)
-            // No `removeDuplicates` here: the two inputs must stay separable,
-            // because the window needs to know whether the panel is expanded
-            // *and* whether that was deliberate. A pinned panel must survive the
-            // idle timer; a hover-opened one must not. Filtering on the combined
-            // flag would throw away exactly the distinction that matters.
-            // `setInteractive` is idempotent, so repeated values are harmless.
-            .sink { [weak self] over, pinned in
-                self?.controller?.setInteractive(expanded: over || pinned, pinned: pinned)
+            .sink { [weak self] visualState, pinned in
+                self?.controller?.setInteractive(expanded: visualState == .expanded, pinned: pinned)
             }
             .store(in: &cancellables)
     }

@@ -21,12 +21,16 @@ struct NotchSurface: View {
     /// the capsule and any future expanded-face render from one load.
     let liveIcon: LiveIconPack
     let isNotched: Bool
-    let isExpanded: Bool
+    let visualState: NotchVisualState
+    let hardwareNotchSize: CGSize
     let collapsedSize: CGSize
+    let onExpandNow: () -> Void
     let onDrop: ([URL]) -> Void
     /// Reports the size actually being presented so the window's click-through
     /// region matches the visible shape on every screen and at every width.
     let onPresentedSize: (CGSize, Bool) -> Void
+
+    var isExpanded: Bool { visualState == .expanded }
 
     init(
         coordinator: TrackingCoordinator,
@@ -38,8 +42,10 @@ struct NotchSurface: View {
         reveal: RevealCascade,
         motion: NotchMotion,
         isNotched: Bool,
-        isExpanded: Bool,
+        visualState: NotchVisualState,
+        hardwareNotchSize: CGSize,
         collapsedSize: CGSize,
+        onExpandNow: @escaping () -> Void = {},
         onDrop: @escaping ([URL]) -> Void,
         onPresentedSize: @escaping (CGSize, Bool) -> Void = { _, _ in }
     ) {
@@ -56,48 +62,59 @@ struct NotchSurface: View {
         reveal.stagger = settings.rowStagger
         self.motion = motion
         self.isNotched = isNotched
-        self.isExpanded = isExpanded
+        self.visualState = visualState
+        self.hardwareNotchSize = hardwareNotchSize
         self.collapsedSize = collapsedSize
+        self.onExpandNow = onExpandNow
         self.onDrop = onDrop
         self.onPresentedSize = onPresentedSize
     }
 
     private var targetSize: CGSize {
-        guard isExpanded else { return collapsedSize }
-        let panelWidth = CGFloat(settings.expandedWidth)
-        switch mode.screen {
-        case .settings:
-            return CGSize(width: panelWidth, height: NotchGeometry.settingsHeight)
-        case .add:
-            return CGSize(width: panelWidth, height: NotchGeometry.addFormHeight)
-        case .edit:
-            return CGSize(width: panelWidth, height: NotchGeometry.editFormHeight)
-        case .checkpoint:
-            return CGSize(width: panelWidth, height: NotchGeometry.checkpointHeight)
-        case .home:
-            let h = mode.isHomeFormOpen ? NotchGeometry.homeWithFormHeight : NotchGeometry.homeHeight
-            return CGSize(width: panelWidth, height: h)
-        case .chat:
-            return CGSize(width: panelWidth, height: NotchGeometry.chatHeight)
-        case .list:
-            if today.sessions.isEmpty {
-                return CGSize(width: panelWidth, height: NotchGeometry.emptyListHeight)
-            } else {
-                let rows = min(today.sessions.count, NotchGeometry.maxVisibleRows)
-                let height = NotchGeometry.expandedChromeHeight + CGFloat(rows) * NotchGeometry.rowPitch
-                return CGSize(width: panelWidth, height: min(height, NotchGeometry.canvasSize.height))
+        switch visualState {
+        case .idle:
+            return hardwareNotchSize
+        case .idleHover:
+            return collapsedSize
+        case .expanded:
+            let panelWidth = CGFloat(settings.expandedWidth)
+            switch mode.screen {
+            case .settings:
+                return CGSize(width: panelWidth, height: NotchGeometry.settingsHeight)
+            case .add:
+                return CGSize(width: panelWidth, height: NotchGeometry.addFormHeight)
+            case .edit:
+                return CGSize(width: panelWidth, height: NotchGeometry.editFormHeight)
+            case .checkpoint:
+                return CGSize(width: panelWidth, height: NotchGeometry.checkpointHeight)
+            case .home:
+                let h = mode.isHomeFormOpen ? NotchGeometry.homeWithFormHeight : NotchGeometry.homeHeight
+                return CGSize(width: panelWidth, height: h)
+            case .chat:
+                return CGSize(width: panelWidth, height: NotchGeometry.chatHeight)
+            case .list:
+                if today.sessions.isEmpty {
+                    return CGSize(width: panelWidth, height: NotchGeometry.emptyListHeight)
+                } else {
+                    let rows = min(today.sessions.count, NotchGeometry.maxVisibleRows)
+                    let height = NotchGeometry.expandedChromeHeight + CGFloat(rows) * NotchGeometry.rowPitch
+                    return CGSize(width: panelWidth, height: min(height, NotchGeometry.canvasSize.height))
+                }
             }
         }
     }
 
     private var shape: UnevenRoundedRectangle {
         let top = isNotched ? 0 : targetSize.height / 2
-        // Collapsed mirrors the hardware notch: subtle bottom break, not a
-        // pill. Expanded keeps the large radius, which is what makes the two
-        // states feel like different objects rather than one resizing box.
-        let bottom = isExpanded
-            ? NotchGeometry.expandedRadius
-            : NotchGeometry.collapsedRadius(isNotched: isNotched, height: targetSize.height)
+        let bottom: CGFloat
+        switch visualState {
+        case .idle:
+            bottom = isNotched ? 11 : targetSize.height / 2
+        case .idleHover:
+            bottom = NotchGeometry.collapsedRadius(isNotched: isNotched, height: targetSize.height)
+        case .expanded:
+            bottom = NotchGeometry.expandedRadius
+        }
         return UnevenRoundedRectangle(
             topLeadingRadius: top,
             bottomLeadingRadius: bottom,
@@ -111,15 +128,26 @@ struct NotchSurface: View {
             shape
                 .fill(Color(red: 0, green: 0, blue: 0))
                 .overlay {
-                    shape.stroke(
-                        Color.white.opacity(isExpanded ? 0.12 : 0),
-                        lineWidth: 0.5
-                    )
+                    if visualState == .idle {
+                        // State 1: Native notch cutout with glowing accent stroke
+                        shape.stroke(
+                            Color(hex: 0x60A5FA).opacity(0.65),
+                            lineWidth: 1.2
+                        )
+                        .shadow(color: Color(hex: 0x60A5FA).opacity(0.50), radius: 5, y: 1.5)
+                    } else {
+                        shape.stroke(
+                            Color.white.opacity(isExpanded ? 0.12 : 0.08),
+                            lineWidth: 0.5
+                        )
+                    }
                 }
                 .shadow(
-                    color: isExpanded ? .black.opacity(0.55) : .clear,
-                    radius: isExpanded ? 22 : 0,
-                    y: isExpanded ? 10 : 0
+                    color: isExpanded
+                        ? .black.opacity(0.55)
+                        : (visualState == .idle ? Color(hex: 0x60A5FA).opacity(0.25) : .clear),
+                    radius: isExpanded ? 22 : 5,
+                    y: isExpanded ? 10 : 2
                 )
 
             ZStack(alignment: .top) {
@@ -127,10 +155,14 @@ struct NotchSurface: View {
                 collapsedContent
                     .frame(width: collapsedSize.width, height: collapsedSize.height)
                     .frame(maxWidth: targetSize.width, alignment: .top)
-                    .opacity(isExpanded ? 0 : 1)
-                    .scaleEffect(isExpanded ? 0.94 : 1.0, anchor: .top)
-                    .animation(.easeOut(duration: 0.14), value: isExpanded)
-                    .allowsHitTesting(!isExpanded)
+                    .opacity(visualState == .idleHover ? 1 : 0)
+                    .scaleEffect(visualState == .idleHover ? 1.0 : (isExpanded ? 0.94 : 0.85), anchor: .top)
+                    .animation(.easeOut(duration: 0.16), value: visualState)
+                    .allowsHitTesting(visualState == .idleHover)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onExpandNow()
+                    }
 
                 // Expanded content (header, activity list, forms, settings)
                 expandedContent
@@ -151,7 +183,7 @@ struct NotchSurface: View {
         .frame(width: targetSize.width, height: targetSize.height, alignment: .topLeading)
         .animation(
             .spring(response: 0.44, dampingFraction: 0.78, blendDuration: 0.2),
-            value: isExpanded
+            value: visualState
         )
         .animation(
             .spring(response: 0.44, dampingFraction: 0.78, blendDuration: 0.2),
@@ -160,12 +192,9 @@ struct NotchSurface: View {
         // Restart the entrance cascade on every open. Without this the token
         // stays put after the first expand, so a later reopen shows the rows
         // already settled — the stagger plays exactly once per session.
-        .onChange(of: isExpanded) { _, expanded in
-            if expanded { reveal.restart() }
-            // The click-through region must follow the presented shape, not a
-            // derived guess: a wrong width silently kills the outer header
-            // buttons while the keyboard shortcuts keep working.
-            onPresentedSize(targetSize, expanded)
+        .onChange(of: visualState) { _, state in
+            if state == .expanded { reveal.restart() }
+            onPresentedSize(targetSize, state == .expanded)
         }
         .onChange(of: targetSize) { _, size in
             onPresentedSize(size, isExpanded)
