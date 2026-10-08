@@ -93,19 +93,11 @@ struct SettingsScreen: View {
                         if isSelected {
                             Capsule(style: .continuous)
                                 .fill(Color(hex: 0x1E222A))
-                                .overlay(
-                                    Capsule(style: .continuous)
-                                        .strokeBorder(Color(hex: 0x60A5FA).opacity(0.45), lineWidth: 0.9)
-                                )
                                 .matchedGeometryEffect(id: "settingsActiveTabIndicator", in: settingsTabNamespace)
-                                .shadow(color: Color(hex: 0x60A5FA).opacity(0.18), radius: 6, y: 1)
+                                .shadow(color: Color.black.opacity(0.35), radius: 4, y: 1)
                         } else {
                             Capsule(style: .continuous)
                                 .fill(Color.white.opacity(0.04))
-                                .overlay(
-                                    Capsule(style: .continuous)
-                                        .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
-                                )
                         }
 
                         HStack(spacing: 6) {
@@ -240,13 +232,13 @@ struct SettingsScreen: View {
                         .textFieldStyle(.plain)
                         .font(.system(size: 12.5, design: .monospaced))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
+                        .padding(.horizontal, 12)
+                        .frame(height: 36)
                         .background(
-                            RoundedRectangle(cornerRadius: 6)
+                            RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.white.opacity(0.06))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
+                                    RoundedRectangle(cornerRadius: 8)
                                         .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
                                 )
                         )
@@ -260,13 +252,13 @@ struct SettingsScreen: View {
                         .textFieldStyle(.plain)
                         .font(.system(size: 12.5, design: .monospaced))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
+                        .padding(.horizontal, 12)
+                        .frame(height: 36)
                         .background(
-                            RoundedRectangle(cornerRadius: 6)
+                            RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.white.opacity(0.06))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
+                                    RoundedRectangle(cornerRadius: 8)
                                         .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
                                 )
                         )
@@ -281,15 +273,15 @@ struct SettingsScreen: View {
                             .textFieldStyle(.plain)
                             .font(.system(size: 12.5, design: .monospaced))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 7)
+                            .padding(.horizontal, 12)
+                            .frame(height: 36)
                             .background(
-                                RoundedRectangle(cornerRadius: 6)
+                                RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.white.opacity(0.06))
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 6)
+                                        RoundedRectangle(cornerRadius: 8)
                                             .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
-                                    )
+                                )
                             )
 
                         Button {
@@ -308,17 +300,17 @@ struct SettingsScreen: View {
                                         .font(.system(size: 11, weight: .semibold))
                                 }
                                 Text(aiService.isFetchingModels ? "Mengambil…" : "Daftar Model")
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(.system(size: 12.5, weight: .semibold))
                             }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
+                            .padding(.horizontal, 14)
+                            .frame(height: 36)
                             .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color(hex: 0x2563EB).opacity(0.85))
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(hex: 0x2563EB))
                             )
                             .foregroundStyle(.white)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(NotchPressStyle())
                         .disabled(aiService.isFetchingModels)
                     }
                 }
@@ -357,7 +349,7 @@ struct SettingsScreen: View {
                                 Text(name)
                                     .font(.system(size: 13, weight: isSelected ? .bold : .medium))
                                     .frame(maxWidth: .infinity)
-                                    .frame(height: 30)
+                                    .frame(height: 36)
                                     .background(
                                         RoundedRectangle(cornerRadius: 6)
                                             .fill(isSelected ? Color(hex: 0x2563EB) : Color.white.opacity(0.06))
@@ -556,15 +548,15 @@ struct SettingsScreen: View {
                             Image(systemName: "folder.badge.gearshape")
                                 .font(.system(size: 12))
                             Text(settings.storageFolderURL == nil ? "Pilih…" : "Ganti")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.system(size: 12.5, weight: .medium))
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, 14)
+                        .frame(height: 36)
                         .background(
-                            RoundedRectangle(cornerRadius: 6)
+                            RoundedRectangle(cornerRadius: 8)
                                 .fill(.white.opacity(0.08))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
+                                    RoundedRectangle(cornerRadius: 8)
                                         .stroke(.white.opacity(0.12), lineWidth: 0.5)
                                 )
                         )
@@ -653,10 +645,10 @@ struct SettingsScreen: View {
                     Image(systemName: "arrow.counterclockwise")
                         .font(.system(size: 12, weight: .semibold))
                     Text("Kembalikan Default")
-                        .font(.system(size: 13.5, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                 }
                 .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .frame(height: 36)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
                         .fill(.white.opacity(0.06))
@@ -678,10 +670,10 @@ struct SettingsScreen: View {
                     Image(systemName: "checkmark")
                         .font(.system(size: 13, weight: .bold))
                     Text("Selesai")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 13.5, weight: .bold))
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(.horizontal, 18)
+                .frame(height: 36)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
                         .fill(Color.white)

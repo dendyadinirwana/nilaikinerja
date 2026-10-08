@@ -94,7 +94,7 @@ struct EditSessionForm: View {
             field(
                 "Judul kegiatan",
                 symbol: "pencil.line",
-                height: 40,
+                height: 36,
                 hasText: !draft.title.isEmpty
             ) {
                 ZStack(alignment: .leading) {

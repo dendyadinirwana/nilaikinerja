@@ -287,12 +287,12 @@ struct AIChatView: View {
                 }
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .frame(height: 36)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(Color.white.opacity(0.07))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .stroke(Color.white.opacity(0.12), lineWidth: 0.8)
                     )
             )

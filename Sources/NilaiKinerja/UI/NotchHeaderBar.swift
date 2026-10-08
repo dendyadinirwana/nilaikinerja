@@ -47,10 +47,6 @@ struct NotchHeaderBar: View {
                         if mode.screen == .settings {
                             Capsule(style: .continuous)
                                 .fill(Color(hex: 0x1E222A))
-                                .overlay(
-                                    Capsule(style: .continuous)
-                                        .strokeBorder(Color(hex: 0x60A5FA).opacity(0.45), lineWidth: 0.8)
-                                )
                         } else if uiState.isHoveringSettings {
                             Capsule(style: .continuous)
                                 .fill(Color.white.opacity(0.08))
@@ -123,19 +119,11 @@ struct NotchHeaderBar: View {
                 if isOn {
                     Capsule(style: .continuous)
                         .fill(Color(hex: 0x1E222A))
-                        .overlay(
-                            Capsule(style: .continuous)
-                                .strokeBorder(Color(hex: 0x60A5FA).opacity(0.45), lineWidth: 0.9)
-                        )
                         .matchedGeometryEffect(id: "headerActiveTabIndicator", in: tabNamespace)
-                        .shadow(color: Color(hex: 0x60A5FA).opacity(0.18), radius: 6, y: 1)
+                        .shadow(color: Color.black.opacity(0.35), radius: 4, y: 1)
                 } else if isHovered {
                     Capsule(style: .continuous)
                         .fill(Color.white.opacity(0.07))
-                        .overlay(
-                            Capsule(style: .continuous)
-                                .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.6)
-                        )
                 }
 
                 Image(systemName: icon)

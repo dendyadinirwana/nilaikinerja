@@ -276,7 +276,7 @@ struct AddActivityForm: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.85))
 
-            shell(height: 40, hasText: !draft.title.isEmpty) {
+            shell(height: 36, hasText: !draft.title.isEmpty) {
                 ZStack(alignment: .leading) {
                     if draft.title.isEmpty {
                         Text("Contoh: Review dokumen SIPPDT")
