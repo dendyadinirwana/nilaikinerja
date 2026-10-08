@@ -41,6 +41,7 @@ enum SelfTest {
         testReportEscaping()
         testDragDecisionTable()
         testVisualStateTransitions()
+        testAppSettingsFeatures()
 
         print("")
         if failures.isEmpty {
@@ -397,6 +398,65 @@ enum SelfTest {
             check("monthly report did not throw (\(error))", false)
         }
         try? FileManager.default.removeItem(at: url)
+    }
+
+    // MARK: - App Settings Features Verification
+
+    private static func testAppSettingsFeatures() {
+        print("\n— app settings verification —")
+        let settings = AppSettings.shared
+
+        // Test 1: Idle Glow settings
+        settings.idleGlowEnabled = false
+        check("idle glow can be disabled", !settings.idleGlowEnabled)
+        settings.idleGlowEnabled = true
+        check("idle glow can be enabled", settings.idleGlowEnabled)
+
+        settings.idleGlowIntensity = 0.85
+        check("idle glow intensity updates accurately", abs(settings.idleGlowIntensity - 0.85) < 0.001)
+
+        // Test 2: Idle Dwell Duration & live link to HoverState
+        settings.idleDwellDuration = 1.45
+        check("idle dwell duration updates accurately", abs(settings.idleDwellDuration - 1.45) < 0.001)
+        let hover = HoverState()
+        check("HoverState reflects live idleDwellDuration", abs(hover.dwellDuration - 1.45) < 0.001)
+
+        // Test 3: Capsule & Expanded geometry
+        settings.capsuleWidth = 320
+        check("capsule width updates", abs(settings.capsuleWidth - 320) < 0.001)
+        settings.expandedWidth = 680
+        check("expanded width updates", abs(settings.expandedWidth - 680) < 0.001)
+
+        // Test 4: AI settings
+        settings.aiBaseURL = "http://localhost:11434/v1"
+        check("ai base url updates", settings.aiBaseURL == "http://localhost:11434/v1")
+        settings.aiModel = "llama3"
+        check("ai model updates", settings.aiModel == "llama3")
+
+        // Test 5: Work schedule syncing
+        settings.workStartHour = 8
+        settings.workStartMinute = 15
+        check("work schedule startHour synced", WorkSchedule.startHour == 8)
+        check("work schedule startMinute synced", WorkSchedule.startMinute == 15)
+        settings.workdays = [2, 3, 4]
+        check("workdays synced to activeWorkdays set", WorkSchedule.activeWorkdays == Set([2, 3, 4]))
+
+        // Test 6: Reminders
+        settings.reminderEnabled = false
+        check("reminder toggle updates", !settings.reminderEnabled)
+        settings.reminderIntervalMinutes = 45
+        check("reminder interval updates", settings.reminderIntervalMinutes == 45)
+
+        // Test 7: Reset to defaults restores everything cleanly
+        settings.resetToDefaults()
+        check("reset restores idleGlowEnabled", settings.idleGlowEnabled == true)
+        check("reset restores idleGlowIntensity", abs(settings.idleGlowIntensity - 0.65) < 0.001)
+        check("reset restores idleDwellDuration", abs(settings.idleDwellDuration - 1.0) < 0.001)
+        check("reset restores capsuleWidth", abs(settings.capsuleWidth - 291) < 0.001)
+        check("reset restores expandedWidth", abs(settings.expandedWidth - 640) < 0.001)
+        check("reset restores workStartHour", settings.workStartHour == 7)
+        check("reset restores reminderEnabled", settings.reminderEnabled == true)
+        check("reset restores aiModel", settings.aiModel == "antigravity")
     }
 
     // MARK: - 3-State Notch Visual Transitions
