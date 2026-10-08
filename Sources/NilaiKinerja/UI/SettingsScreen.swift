@@ -134,7 +134,7 @@ struct SettingsScreen: View {
         VStack(alignment: .leading, spacing: 24) {
             // State 1: Idle
             section("State 1 — Idle") {
-                Toggle(isOn: $settings.idleGlowEnabled) {
+                HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Garis Tepi Glowing")
                             .font(.system(size: 13.5, weight: .medium))
@@ -143,8 +143,11 @@ struct SettingsScreen: View {
                             .font(.system(size: 11.5))
                             .foregroundStyle(.white.opacity(0.55))
                     }
+                    Spacer(minLength: 16)
+                    Toggle("", isOn: $settings.idleGlowEnabled)
+                        .labelsHidden()
+                        .toggleStyle(SwitchToggleStyle(tint: Color(hex: 0x2563EB)))
                 }
-                .toggleStyle(SwitchToggleStyle(tint: Color(hex: 0x2563EB)))
 
                 if settings.idleGlowEnabled {
                     slider(
@@ -463,7 +466,7 @@ struct SettingsScreen: View {
     private var reminderSection: some View {
         section("Pengingat Checkpoint") {
             VStack(alignment: .leading, spacing: 14) {
-                Toggle(isOn: $settings.reminderEnabled) {
+                HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Pengingat Berkala")
                             .font(.system(size: 13.5, weight: .medium))
@@ -472,10 +475,13 @@ struct SettingsScreen: View {
                             .font(.system(size: 12))
                             .foregroundStyle(.white.opacity(0.55))
                     }
+                    Spacer(minLength: 16)
+                    Toggle("", isOn: $settings.reminderEnabled)
+                        .labelsHidden()
+                        .toggleStyle(SwitchToggleStyle(tint: Color(hex: 0x2563EB)))
                 }
-                .toggleStyle(SwitchToggleStyle(tint: Color(hex: 0x2563EB)))
 
-                Toggle(isOn: $settings.reminderSoundEnabled) {
+                HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Suara Notifikasi")
                             .font(.system(size: 13.5, weight: .medium))
@@ -484,8 +490,11 @@ struct SettingsScreen: View {
                             .font(.system(size: 12.5))
                             .foregroundStyle(.white.opacity(0.55))
                     }
+                    Spacer(minLength: 16)
+                    Toggle("", isOn: $settings.reminderSoundEnabled)
+                        .labelsHidden()
+                        .toggleStyle(SwitchToggleStyle(tint: Color(hex: 0x2563EB)))
                 }
-                .toggleStyle(SwitchToggleStyle(tint: Color(hex: 0x2563EB)))
 
                 if settings.reminderEnabled {
                     VStack(alignment: .leading, spacing: 6) {
