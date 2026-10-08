@@ -2,7 +2,27 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
-/// The settings panel: schedule, reminder, geometry, hover timing, and the attachment folder.
+/// Contextual tabs for organizing settings cleanly without endless scrolling.
+enum SettingsTab: String, CaseIterable {
+    case notch = "Notch & Interaksi"
+    case ai = "Asisten AI"
+    case schedule = "Kinerja & Berkas"
+
+    var icon: String {
+        switch self {
+        case .notch: return "display"
+        case .ai: return "sparkles"
+        case .schedule: return "checklist"
+        }
+    }
+}
+
+/// Simple state holder avoiding SwiftUIMacros plugin requirement.
+final class SettingsTabHolder: ObservableObject {
+    @Published var selectedTab: SettingsTab = .notch
+}
+
+/// The settings panel: 3-state notch tuning, AI connection, schedule, and attachments.
 ///
 /// Presented as a screen inside the expanded panel rather than a separate
 /// window, so it inherits the notch's expansion animation and dismisses the
@@ -10,6 +30,7 @@ import UniformTypeIdentifiers
 struct SettingsScreen: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject private var aiService = AIChatService.shared
+    @StateObject private var tabHolder = SettingsTabHolder()
     /// Switches back to the list when the user is done.
     var onDone: () -> Void
 
@@ -26,24 +47,25 @@ struct SettingsScreen: View {
     private let reminderPresets: [Int] = [15, 30, 45, 60, 90]
 
     var body: some View {
-        // The universal notch tab bar (rendered by NotchSurface) replaces the
-        // old "Pengaturan" title row, including the close button — the gear
-        // toggle in that bar already returns to Beranda.
         VStack(alignment: .leading, spacing: 0) {
+            tabSwitcher
+            Divider().overlay(Color.white.opacity(0.08))
+
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 28) {
-                    aiSection
-                    workScheduleSection
-                    reminderSection
-                    geometrySection
-                    hoverSection
-                    animationSection
-                    storageSection
+                VStack(alignment: .leading, spacing: 20) {
+                    switch tabHolder.selectedTab {
+                    case .notch:
+                        notchInteractionTab
+                    case .ai:
+                        aiTab
+                    case .schedule:
+                        scheduleAndStorageTab
+                    }
                 }
                 .padding(.horizontal, 22)
-                .padding(.vertical, 18)
+                .padding(.vertical, 16)
             }
-            .frame(height: NotchGeometry.settingsBodyHeight)
+            .frame(height: NotchGeometry.settingsBodyHeight - 48)
 
             Divider().overlay(Color.white.opacity(0.08))
             footer
@@ -54,228 +76,253 @@ struct SettingsScreen: View {
         )
     }
 
-    // MARK: - Chrome
+    // MARK: - Tab Switcher
 
-    private var footer: some View {
-        HStack(spacing: 12) {
-            Button {
-                settings.resetToDefaults()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 12, weight: .semibold))
-                    Text("Kembalikan Default")
-                        .font(.system(size: 13.5, weight: .medium))
+    private var tabSwitcher: some View {
+        HStack(spacing: 6) {
+            ForEach(SettingsTab.allCases, id: \.self) { tab in
+                let isSelected = tabHolder.selectedTab == tab
+                Button {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                        tabHolder.selectedTab = tab
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: tab.icon)
+                            .font(.system(size: 11.5, weight: isSelected ? .bold : .medium))
+                        Text(tab.rawValue)
+                            .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(isSelected ? Color(hex: 0x1E222A) : Color.white.opacity(0.04))
+                            .overlay(
+                                Capsule(style: .continuous)
+                                    .strokeBorder(
+                                        isSelected ? Color(hex: 0x60A5FA).opacity(0.55) : Color.white.opacity(0.08),
+                                        lineWidth: isSelected ? 0.9 : 0.5
+                                    )
+                            )
+                    )
+                    .foregroundStyle(isSelected ? Color(hex: 0x60A5FA) : Color.white.opacity(0.70))
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.white.opacity(0.06))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(.white.opacity(0.12), lineWidth: 0.5)
-                        )
-                )
-                .foregroundStyle(.white.opacity(0.75))
+                .buttonStyle(.plain)
             }
-            .buttonStyle(NotchPressStyle())
-
-            Spacer()
-
-            Button {
-                onDone()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 13, weight: .bold))
-                    Text("Selesai")
-                        .font(.system(size: 14, weight: .bold))
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white)
-                )
-                .foregroundStyle(Color.black)
-            }
-            .buttonStyle(NotchPressStyle())
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+    }
+
+    // MARK: - Tab 1: Notch & Interaksi
+
+    private var notchInteractionTab: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            // State 1: Idle
+            section("State 1 — Idle (Notch M4 Native)") {
+                Toggle(isOn: $settings.idleGlowEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Garis Tepi Glowing")
+                            .font(.system(size: 13.5, weight: .medium))
+                            .foregroundStyle(.white)
+                        Text("Menampilkan garis tepi bercahaya lembut di sekeliling hardware notch saat idle.")
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
+                }
+                .toggleStyle(SwitchToggleStyle(tint: Color(hex: 0x2563EB)))
+
+                if settings.idleGlowEnabled {
+                    slider(
+                        "Intensitas Cahaya",
+                        value: $settings.idleGlowIntensity,
+                        range: 0.2...1.0,
+                        format: "%.0f%%",
+                        multiplier: 100
+                    )
+                }
+            }
+
+            // State 2: Idle Hover
+            section("State 2 — Idle Hover (Preview Kapsul)") {
+                slider(
+                    "Dwell Timer ke Expanded",
+                    value: $settings.idleDwellDuration,
+                    range: 0.3...2.0,
+                    format: "%.2f dtk"
+                )
+                Text("Waktu kursor harus menetap di atas notch sebelum panel otomatis mekar ke bawah.")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(.white.opacity(0.48))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                slider(
+                    "Lebar Kapsul",
+                    value: $settings.capsuleWidth,
+                    range: 220...360,
+                    format: "%.0f pt"
+                )
+                slider(
+                    "Tinggi Kapsul",
+                    value: $settings.capsuleHeight,
+                    range: 28...50,
+                    format: "%.1f pt"
+                )
+            }
+
+            // State 3: Expanded
+            section("State 3 — Expanded (Panel Penuh)") {
+                slider(
+                    "Lebar Panel Terbuka",
+                    value: $settings.expandedWidth,
+                    range: 520...720,
+                    format: "%.0f pt"
+                )
+                slider(
+                    "Auto-Collapse Delay",
+                    value: $settings.hoverCloseDelay,
+                    range: 0.1...2.0,
+                    format: "%.2f dtk"
+                )
+                Text("Jeda waktu sebelum panel menutup otomatis kembali ke idle saat kursor ditinggalkan.")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(.white.opacity(0.48))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    // MARK: - Tab 2: Asisten AI
+
+    private var aiTab: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            aiSection
+        }
+    }
+
+    // MARK: - Tab 3: Kinerja & Berkas
+
+    private var scheduleAndStorageTab: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            workScheduleSection
+            reminderSection
+            storageSection
+        }
     }
 
     // MARK: - Sections
 
     private var aiSection: some View {
-        section("Integrasi AI") {
+        section("Asisten AI (OpenAI Compatible / 9router)") {
             VStack(alignment: .leading, spacing: 14) {
-                // Base URL
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Base URL Endpoint")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.85))
-
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Base URL API")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.70))
                     TextField("http://localhost:20128/v1", text: $settings.aiBaseURL)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 13, design: .monospaced))
+                        .font(.system(size: 12.5, design: .monospaced))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
                         .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color(hex: 0x16181F))
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.white.opacity(0.06))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .stroke(Color.white.opacity(0.14), lineWidth: 0.8)
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
                                 )
                         )
                 }
 
-                // API Key
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("API Key / Bearer Token")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.85))
-
-                    SecureField("Token otentikasi (sk-…)", text: $settings.aiApiKey)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("API Key (Opsional)")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.70))
+                    SecureField("Kosongkan jika gateway lokal tanpa auth", text: $settings.aiApiKey)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 13, design: .monospaced))
+                        .font(.system(size: 12.5, design: .monospaced))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
                         .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color(hex: 0x16181F))
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.white.opacity(0.06))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .stroke(Color.white.opacity(0.14), lineWidth: 0.8)
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
                                 )
                         )
                 }
 
-                // Model Default & Test Button
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("Model Default")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.85))
-
-                        Spacer()
-
-                        if !aiService.availableModels.isEmpty {
-                            Text("\(aiService.availableModels.count) model")
-                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(Color(hex: 0x60A5FA))
-                        }
-                    }
-
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Model Default")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.70))
                     HStack(spacing: 8) {
                         TextField("antigravity", text: $settings.aiModel)
                             .textFieldStyle(.plain)
-                            .font(.system(size: 13, design: .monospaced))
+                            .font(.system(size: 12.5, design: .monospaced))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
                             .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(Color(hex: 0x16181F))
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.white.opacity(0.06))
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                            .stroke(Color.white.opacity(0.14), lineWidth: 0.8)
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
                                     )
                             )
 
-                        testConnectionButton
-                    }
-
-                    // Model presets
-                    HStack(spacing: 6) {
-                        ForEach(["antigravity", "chatgpt", "claude", "grok", "gemini/gemini-3.8-flash"], id: \.self) { m in
-                            let isSelected = settings.aiModel == m
-                            Button {
-                                settings.aiModel = m
-                            } label: {
-                                Text(m.components(separatedBy: "/").last ?? m)
-                                    .font(.system(size: 11, weight: isSelected ? .bold : .medium, design: .monospaced))
-                                    .foregroundStyle(isSelected ? Color(hex: 0x60A5FA) : .white.opacity(0.70))
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(
-                                        Capsule()
-                                            .fill(isSelected ? Color(hex: 0x60A5FA).opacity(0.15) : Color(hex: 0x16181F))
-                                            .overlay(
-                                                Capsule()
-                                                    .stroke(isSelected ? Color(hex: 0x60A5FA).opacity(0.40) : Color.white.opacity(0.12), lineWidth: 0.6)
-                                            )
-                                    )
+                        Button {
+                            Task {
+                                await aiService.fetchModels(
+                                    baseURL: settings.aiBaseURL,
+                                    storedKey: settings.aiApiKey
+                                )
                             }
-                            .buttonStyle(.plain)
+                        } label: {
+                            HStack(spacing: 5) {
+                                if aiService.isFetchingModels {
+                                    ProgressView().controlSize(.mini).tint(.white)
+                                } else {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.system(size: 11, weight: .semibold))
+                                }
+                                Text(aiService.isFetchingModels ? "Mengambil…" : "Daftar Model")
+                                    .font(.system(size: 12, weight: .medium))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color(hex: 0x2563EB).opacity(0.85))
+                            )
+                            .foregroundStyle(.white)
                         }
-                    }
-                    .padding(.top, 2)
-
-                    if let status = aiService.statusInfo {
-                        Text(status)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Color(hex: 0x34D399))
-                            .padding(.top, 2)
-                    } else if let err = aiService.errorMessage {
-                        Text(err)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Color(hex: 0xF87171))
-                            .padding(.top, 2)
+                        .buttonStyle(.plain)
+                        .disabled(aiService.isFetchingModels)
                     }
                 }
-            }
-        }
-    }
 
-    private var testConnectionButton: some View {
-        Button {
-            Task {
-                let res = await aiService.testConnection(
-                    baseURL: settings.aiBaseURL,
-                    storedKey: settings.aiApiKey,
-                    model: settings.aiModel
-                )
-                if res != "ok" {
-                    aiService.statusInfo = nil
-                    aiService.errorMessage = "Gagal: \(res)"
-                }
-            }
-        } label: {
-            ZStack {
-                if aiService.isStreaming {
-                    ProgressView()
-                        .scaleEffect(0.65)
-                } else {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 12, weight: .bold))
+                if !aiService.availableModels.isEmpty {
+                    Text("Terdeteksi \(aiService.availableModels.count) model dari gateway.")
+                        .font(.system(size: 11.5))
                         .foregroundStyle(Color(hex: 0x60A5FA))
                 }
             }
-            .frame(width: 36, height: 36)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(hex: 0x16181F))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.white.opacity(0.14), lineWidth: 0.8)
-                    )
-            )
         }
-        .buttonStyle(NotchPressStyle())
-        .help("Uji koneksi ke endpoint AI")
     }
 
     private var workScheduleSection: some View {
-        section("Waktu Kerja") {
-            VStack(alignment: .leading, spacing: 12) {
-                // Hari kerja selector
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Hari Kerja")
+        section("Jadwal Kerja") {
+            VStack(alignment: .leading, spacing: 14) {
+                // Hari kerja
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Hari Kerja Aktif")
                         .font(.system(size: 13.5, weight: .medium))
                         .foregroundStyle(.white.opacity(0.75))
 
@@ -347,71 +394,81 @@ struct SettingsScreen: View {
                 timeStepper(value: hour, range: 0...23, step: 1)
                 Text(":")
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.4))
-                timeStepper(value: minute, range: 0...55, step: 5)
-                Spacer(minLength: 0)
+                    .foregroundStyle(.white.opacity(0.6))
+                timeStepper(value: minute, range: 0...59, step: 5)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(.white.opacity(0.06))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(.white.opacity(0.12), lineWidth: 0.5)
-                    )
-            )
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func timeStepper(value: Binding<Int>, range: ClosedRange<Int>, step: Int) -> some View {
+    private func timeStepper(
+        value: Binding<Int>,
+        range: ClosedRange<Int>,
+        step: Int
+    ) -> some View {
         HStack(spacing: 4) {
             Text(String(format: "%02d", value.wrappedValue))
-                .font(.system(size: 16, weight: .bold, design: .monospaced))
+                .font(.system(size: 14, weight: .semibold, design: .monospaced))
                 .foregroundStyle(.white)
                 .frame(width: 26)
 
-            VStack(spacing: 2) {
+            VStack(spacing: 1) {
                 Button {
-                    if value.wrappedValue + step <= range.upperBound {
-                        value.wrappedValue += step
-                    } else {
-                        value.wrappedValue = range.lowerBound
-                    }
+                    let next = value.wrappedValue + step
+                    value.wrappedValue = next > range.upperBound ? range.lowerBound : next
                 } label: {
                     Image(systemName: "chevron.up")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.6))
                         .frame(width: 16, height: 11)
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.white.opacity(0.65))
 
                 Button {
-                    if value.wrappedValue - step >= range.lowerBound {
-                        value.wrappedValue -= step
-                    } else {
-                        value.wrappedValue = range.upperBound
-                    }
+                    let prev = value.wrappedValue - step
+                    value.wrappedValue = prev < range.lowerBound ? range.upperBound : prev
                 } label: {
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.6))
                         .frame(width: 16, height: 11)
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.white.opacity(0.65))
             }
         }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.white.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+                )
+        )
     }
 
     private var reminderSection: some View {
-        section("Pengingat (Reminder)") {
-            VStack(alignment: .leading, spacing: 10) {
+        section("Pengingat Checkpoint") {
+            VStack(alignment: .leading, spacing: 14) {
                 Toggle(isOn: $settings.reminderEnabled) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Ingatkan Catat Kegiatan")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.95))
-                        Text("Pemberitahuan berkala untuk mencatat pekerjaan harian.")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Pengingat Berkala")
+                            .font(.system(size: 13.5, weight: .medium))
+                            .foregroundStyle(.white)
+                        Text("Buka notch otomatis untuk menanyakan progres pekerjaan.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
+                }
+                .toggleStyle(SwitchToggleStyle(tint: Color(hex: 0x2563EB)))
+
+                Toggle(isOn: $settings.reminderSoundEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Suara Notifikasi")
+                            .font(.system(size: 13.5, weight: .medium))
+                            .foregroundStyle(.white)
+                        Text("Bunyikan suara halus saat waktu pengingat tiba.")
                             .font(.system(size: 12.5))
                             .foregroundStyle(.white.opacity(0.55))
                     }
@@ -451,71 +508,6 @@ struct SettingsScreen: View {
                     .padding(.top, 4)
                 }
             }
-        }
-    }
-
-    private var geometrySection: some View {
-        section("Ukuran") {
-            slider(
-                "Lebar idle",
-                value: $settings.capsuleWidth,
-                range: 220...420,
-                format: "%.0f pt"
-            )
-            slider(
-                "Tinggi idle & header",
-                value: $settings.capsuleHeight,
-                range: 28...56,
-                format: "%.1f pt"
-            )
-            slider(
-                "Lebar panel",
-                value: $settings.expandedWidth,
-                range: 360...720,
-                format: "%.0f pt"
-            )
-            slider(
-                "Tinggi panel",
-                value: $settings.expandedHeight,
-                range: 260...620,
-                format: "%.0f pt"
-            )
-        }
-    }
-
-    private var hoverSection: some View {
-        section("Hover & Respon") {
-            slider(
-                "Buka setelah",
-                value: $settings.hoverOpenDelay,
-                range: 0...1.0,
-                format: "%.2f dtk"
-            )
-            slider(
-                "Tutup setelah",
-                value: $settings.hoverCloseDelay,
-                range: 0...2.0,
-                format: "%.2f dtk"
-            )
-            Text("Jeda tutup mencegah panel tertutup saat kursor bergerak dari capsule ke daftar.")
-                .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.48))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var animationSection: some View {
-        section("Animasi") {
-            slider(
-                "Stagger baris",
-                value: $settings.rowStagger,
-                range: 0...0.12,
-                format: "%.3f dtk"
-            )
-            Text("Jeda kemunculan bertahap antar kegiatan saat panel terbuka.")
-                .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.48))
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -598,7 +590,8 @@ struct SettingsScreen: View {
         _ label: String,
         value: Binding<Double>,
         range: ClosedRange<Double>,
-        format: String
+        format: String,
+        multiplier: Double = 1.0
     ) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
@@ -606,31 +599,77 @@ struct SettingsScreen: View {
                     .font(.system(size: 13.5, weight: .medium))
                     .foregroundStyle(.white.opacity(0.85))
                 Spacer()
-                Text(String(format: format, value.wrappedValue))
+                Text(String(format: format, value.wrappedValue * multiplier))
                     .font(.system(size: 12.5, weight: .medium, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.65))
             }
             Slider(value: value, in: range)
                 .controlSize(.small)
-                .tint(Color(hex: 0x60A5FA))
         }
     }
 
-    // MARK: - Folder picker
-
     private func pickFolder() {
         let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
         panel.canChooseFiles = false
-        panel.canCreateDirectories = true
+        panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.prompt = "Simpan di sini"
-        panel.message = "Lampiran kegiatan dan laporan harian akan disimpan di folder ini."
+        panel.prompt = "Pilih Folder"
+        panel.message = "Pilih folder untuk menyimpan lampiran kegiatan"
 
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        // A cancelled pick leaves the existing bookmark alone; a granted one
-        // that failed to encode also leaves it, so a failure here is a no-op
-        // rather than a silent reset.
-        settings.setStorageFolder(url)
+        if panel.runModal() == .OK, let url = panel.url {
+            settings.setStorageFolder(url)
+        }
+    }
+
+    // MARK: - Chrome
+
+    private var footer: some View {
+        HStack(spacing: 12) {
+            Button {
+                settings.resetToDefaults()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("Kembalikan Default")
+                        .font(.system(size: 13.5, weight: .medium))
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.white.opacity(0.06))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(.white.opacity(0.12), lineWidth: 0.5)
+                        )
+                )
+                .foregroundStyle(.white.opacity(0.75))
+            }
+            .buttonStyle(NotchPressStyle())
+
+            Spacer()
+
+            Button {
+                onDone()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 13, weight: .bold))
+                    Text("Selesai")
+                        .font(.system(size: 14, weight: .bold))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white)
+                )
+                .foregroundStyle(Color(hex: 0x141518))
+            }
+            .buttonStyle(NotchPressStyle())
+        }
+        .padding(.horizontal, 22)
+        .padding(.vertical, 12)
     }
 }

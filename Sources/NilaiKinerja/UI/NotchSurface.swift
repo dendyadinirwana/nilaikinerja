@@ -129,12 +129,13 @@ struct NotchSurface: View {
                 .fill(Color(red: 0, green: 0, blue: 0))
                 .overlay {
                     if visualState == .idle {
-                        // State 1: Native notch cutout with glowing accent stroke
-                        shape.stroke(
-                            Color(hex: 0x60A5FA).opacity(0.65),
-                            lineWidth: 1.2
-                        )
-                        .shadow(color: Color(hex: 0x60A5FA).opacity(0.50), radius: 5, y: 1.5)
+                        if settings.idleGlowEnabled {
+                            shape.stroke(
+                                Color(hex: 0x60A5FA).opacity(settings.idleGlowIntensity),
+                                lineWidth: 1.2
+                            )
+                            .shadow(color: Color(hex: 0x60A5FA).opacity(settings.idleGlowIntensity * 0.75), radius: 5, y: 1.5)
+                        }
                     } else {
                         shape.stroke(
                             Color.white.opacity(isExpanded ? 0.12 : 0.08),
@@ -145,7 +146,7 @@ struct NotchSurface: View {
                 .shadow(
                     color: isExpanded
                         ? .black.opacity(0.55)
-                        : (visualState == .idle ? Color(hex: 0x60A5FA).opacity(0.25) : .clear),
+                        : (visualState == .idle && settings.idleGlowEnabled ? Color(hex: 0x60A5FA).opacity(settings.idleGlowIntensity * 0.4) : .clear),
                     radius: isExpanded ? 22 : 5,
                     y: isExpanded ? 10 : 2
                 )

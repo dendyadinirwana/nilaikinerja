@@ -28,6 +28,9 @@ final class AppSettings: ObservableObject {
         static let aiBaseURL = "settings.aiBaseURL"
         static let aiApiKey = "settings.aiApiKey"
         static let aiModel = "settings.aiModel"
+        static let idleGlowEnabled = "settings.idleGlowEnabled"
+        static let idleGlowIntensity = "settings.idleGlowIntensity"
+        static let idleDwellDuration = "settings.idleDwellDuration"
     }
 
     private let defaults: UserDefaults
@@ -60,6 +63,23 @@ final class AppSettings: ObservableObject {
     /// header + button height would starve the list.
     @Published var expandedHeight: Double {
         didSet { defaults.set(expandedHeight, forKey: Key.expandedHeight) }
+    }
+
+    // MARK: - 3-State Notch
+
+    /// Whether the subtle glowing accent stroke is rendered around the native M4 notch during State 1 (Idle).
+    @Published var idleGlowEnabled: Bool {
+        didSet { defaults.set(idleGlowEnabled, forKey: Key.idleGlowEnabled) }
+    }
+
+    /// Opacity / intensity of the glowing stroke (0.2 to 1.0, default 0.65).
+    @Published var idleGlowIntensity: Double {
+        didSet { defaults.set(idleGlowIntensity, forKey: Key.idleGlowIntensity) }
+    }
+
+    /// Duration pointer must dwell in State 2 (Idle Hover) before auto-expanding to State 3 (0.3s to 2.0s, default 1.0s).
+    @Published var idleDwellDuration: Double {
+        didSet { defaults.set(idleDwellDuration, forKey: Key.idleDwellDuration) }
     }
 
     // MARK: - Hover
@@ -265,6 +285,11 @@ final class AppSettings: ObservableObject {
 
         self.aiBaseURL = defaults.string(forKey: Key.aiBaseURL) ?? "http://localhost:20128/v1"
         self.aiModel = defaults.string(forKey: Key.aiModel) ?? "antigravity"
+        self.idleGlowEnabled = defaults.object(forKey: Key.idleGlowEnabled) as? Bool ?? true
+        self.idleGlowIntensity = Self.read(
+            defaults, Key.idleGlowIntensity, 0.65, range: 0.2...1.0)
+        self.idleDwellDuration = Self.read(
+            defaults, Key.idleDwellDuration, 1.0, range: 0.3...2.0)
         // No baked-in gateway secret: an old hardcoded literal went stale and made
         // every chat return invalid_api_key. AIKeyResolver reads the live 9router
         // key at request time instead.
@@ -324,6 +349,9 @@ final class AppSettings: ObservableObject {
         aiBaseURL = "http://localhost:20128/v1"
         aiModel = "antigravity"
         aiApiKey = AIKeyResolver.liveGatewayKey() ?? ""
+        idleGlowEnabled = true
+        idleGlowIntensity = 0.65
+        idleDwellDuration = 1.0
         syncWorkSchedule()
     }
 }

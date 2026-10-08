@@ -23,7 +23,9 @@ final class HoverState: ObservableObject {
     private var dwellTask: Task<Void, Never>?
 
     /// Duration pointer must dwell in State 2 (idleHover) before expanding to State 3.
-    var dwellDuration: TimeInterval = 1.0
+    var dwellDuration: TimeInterval {
+        AppSettings.shared.idleDwellDuration
+    }
 
     var isExpanded: Bool { visualState == .expanded }
 
