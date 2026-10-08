@@ -31,6 +31,7 @@ struct SettingsScreen: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject private var aiService = AIChatService.shared
     @StateObject private var tabHolder = SettingsTabHolder()
+    @Namespace private var settingsTabNamespace
     /// Switches back to the list when the user is done.
     var onDone: () -> Void
 
@@ -64,6 +65,7 @@ struct SettingsScreen: View {
                 }
                 .padding(.horizontal, 22)
                 .padding(.vertical, 16)
+                .animation(.spring(response: 0.35, dampingFraction: 0.78), value: tabHolder.selectedTab)
             }
             .frame(height: NotchGeometry.settingsBodyHeight - 48)
 
@@ -83,30 +85,40 @@ struct SettingsScreen: View {
             ForEach(SettingsTab.allCases, id: \.self) { tab in
                 let isSelected = tabHolder.selectedTab == tab
                 Button {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
                         tabHolder.selectedTab = tab
                     }
                 } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: tab.icon)
-                            .font(.system(size: 11.5, weight: isSelected ? .bold : .medium))
-                        Text(tab.rawValue)
-                            .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                    ZStack {
+                        if isSelected {
+                            Capsule(style: .continuous)
+                                .fill(Color(hex: 0x1E222A))
+                                .overlay(
+                                    Capsule(style: .continuous)
+                                        .strokeBorder(Color(hex: 0x60A5FA).opacity(0.45), lineWidth: 0.9)
+                                )
+                                .matchedGeometryEffect(id: "settingsActiveTabIndicator", in: settingsTabNamespace)
+                                .shadow(color: Color(hex: 0x60A5FA).opacity(0.18), radius: 6, y: 1)
+                        } else {
+                            Capsule(style: .continuous)
+                                .fill(Color.white.opacity(0.04))
+                                .overlay(
+                                    Capsule(style: .continuous)
+                                        .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
+                                )
+                        }
+
+                        HStack(spacing: 6) {
+                            Image(systemName: tab.icon)
+                                .font(.system(size: 11.5, weight: isSelected ? .bold : .medium))
+                            Text(tab.rawValue)
+                                .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                        }
+                        .padding(.horizontal, 13)
+                        .padding(.vertical, 7)
+                        .foregroundStyle(isSelected ? Color(hex: 0x60A5FA) : Color.white.opacity(0.70))
+                        .scaleEffect(isSelected ? 1.04 : 1.0)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(isSelected ? Color(hex: 0x1E222A) : Color.white.opacity(0.04))
-                            .overlay(
-                                Capsule(style: .continuous)
-                                    .strokeBorder(
-                                        isSelected ? Color(hex: 0x60A5FA).opacity(0.55) : Color.white.opacity(0.08),
-                                        lineWidth: isSelected ? 0.9 : 0.5
-                                    )
-                            )
-                    )
-                    .foregroundStyle(isSelected ? Color(hex: 0x60A5FA) : Color.white.opacity(0.70))
                 }
                 .buttonStyle(.plain)
             }
@@ -121,7 +133,7 @@ struct SettingsScreen: View {
     private var notchInteractionTab: some View {
         VStack(alignment: .leading, spacing: 24) {
             // State 1: Idle
-            section("State 1 — Idle (Notch M4 Native)") {
+            section("State 1 — Idle") {
                 Toggle(isOn: $settings.idleGlowEnabled) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Garis Tepi Glowing")
@@ -146,7 +158,7 @@ struct SettingsScreen: View {
             }
 
             // State 2: Idle Hover
-            section("State 2 — Idle Hover (Preview Kapsul)") {
+            section("State 2 — Idle Hover") {
                 slider(
                     "Dwell Timer ke Expanded",
                     value: $settings.idleDwellDuration,
@@ -173,7 +185,7 @@ struct SettingsScreen: View {
             }
 
             // State 3: Expanded
-            section("State 3 — Expanded (Panel Penuh)") {
+            section("State 3 — Expanded") {
                 slider(
                     "Lebar Panel Terbuka",
                     value: $settings.expandedWidth,
