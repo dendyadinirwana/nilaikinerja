@@ -243,77 +243,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.dumpHitTest()
             }
         }
-        if CommandLine.arguments.contains("--mochidump") {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                self.dumpMochiStates()
-            }
-        }
+
         if CommandLine.arguments.contains("--aipickdump") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 self.dumpModelSelectorLabel()
             }
-        }
-    }
-
-    /// Renders every Mochi pose to a PNG sheet.
-    ///
-    /// The character is procedural, so "does it look like Mochi" cannot be
-    /// checked by reading the code — it has to be rasterised and looked at. The
-    /// pack that came before this renderer passed every load check while drawing
-    /// entirely the wrong character, which is exactly the failure a render
-    /// catches and a log line does not.
-    private func dumpMochiStates() {
-        let poses: [(MochiPose, MochiEmote?, String)] = [
-            (.idle, nil, "idle"),
-            (.working, nil, "working"),
-            (.thinking, nil, "thinking"),
-            (.searching, nil, "searching"),
-            (.approval, .surprised, "approval"),
-            (.question, nil, "question"),
-            (.error, nil, "error"),
-            (.finished, .proud, "finished"),
-            (.ratelimit, nil, "ratelimit"),
-            (.sleeping, nil, "sleeping"),
-            (.dizzy, nil, "dizzy"),
-        ]
-
-        let cell: CGFloat = 120
-        let cols = 4
-        let rows = Int(ceil(Double(poses.count) / Double(cols)))
-        let colsF: CGFloat = CGFloat(cols)
-        let rowsF: CGFloat = CGFloat(rows)
-        let sheet = HStack(spacing: 0) {
-            ForEach(0..<rows, id: \.self) { r in
-                VStack(spacing: 0) {
-                    ForEach(0..<cols, id: \.self) { c in
-                        let i = r * cols + c
-                        Group {
-                            if i < poses.count {
-                                MochiView(state: poses[i].0, emote: poses[i].1, side: cell,
-                                          fixedLook: CGPoint(x: 0.2, y: 0.1))
-                            } else {
-                                Color.clear
-                            }
-                        }
-                        .frame(width: cell, height: cell)
-                    }
-                }
-            }
-        }
-        .frame(width: cell * colsF, height: cell * rowsF)
-        .background(Color(red: 0.086, green: 0.094, blue: 0.122))
-
-        let renderer = ImageRenderer(content: sheet)
-        renderer.scale = 2
-        if let img = renderer.nsImage,
-           let tiff = img.tiffRepresentation,
-           let rep = NSBitmapImageRep(data: tiff),
-           let png = rep.representation(using: .png, properties: [:]) {
-            let path = "/tmp/mochi_states.png"
-            try? png.write(to: URL(fileURLWithPath: path))
-            NSLog("[MochiDump] wrote \(path) (\(poses.count) poses: \(poses.map { $0.2 }.joined(separator: ", ")))")
-        } else {
-            NSLog("[MochiDump] FAIL — could not rasterise")
         }
     }
 

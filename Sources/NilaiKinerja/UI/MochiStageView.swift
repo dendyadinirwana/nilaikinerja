@@ -10,11 +10,13 @@ final class MochiState: ObservableObject {
     @Published var tapCount: Int = 0
     @Published var isDragOver: Bool = false
     @Published var dropSuccessTitle: String? = nil
+    @Published var pokeTrigger: Int = 0
 
     private var happyTask: Task<Void, Never>?
 
     func reactToTap() {
         tapCount += 1
+        pokeTrigger += 1
         isHappy = true
         NSSound(named: "Glass")?.play()
         happyTask?.cancel()
@@ -28,6 +30,7 @@ final class MochiState: ObservableObject {
 
     func reactToDrop(title: String) {
         dropSuccessTitle = title
+        pokeTrigger += 1
         isHappy = true
         happyTask?.cancel()
         happyTask = Task {
@@ -141,7 +144,7 @@ struct MochiStageView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "tray.and.arrow.down.fill")
                                 .font(.system(size: 11, weight: .bold))
-                            Text("Lepas Berkas ke Mochi")
+                            Text("Lepas Berkas ke Bot")
                                 .font(.system(size: 11.5, weight: .semibold))
                         }
                         .foregroundStyle(.white)
@@ -168,20 +171,21 @@ struct MochiStageView: View {
                         .allowsHitTesting(false)
                     }
 
-                    // The real Mochi, from the ported Coucou renderer. The procedural vector body
-                    // that used to live here was a stand-in: it read as a plain
-                    // squircle with dot eyes, which is why the character never
-                    // looked like the one in Coucou. The vector helpers below
-                    // stay only for the no-op fallback path.
-                    MochiView(
-                        state: mochi.isDragOver ? .approval
-                            : (mochi.isHappy ? .finished : .idle),
-                        emote: mochi.isDragOver ? .surprised
-                            : (mochi.isHappy ? .proud : nil),
-                        side: 120,
-                        tracksMouse: true
+                    // Animated 3D robot head from fayazara/robot-heads (MIT License).
+                    RobotHeadView(
+                        state: mochi.isDragOver ? .searching
+                            : (mochi.isHappy ? .happy : .idle),
+                        shape: .rectangle,
+                        size: 130,
+                        color: "#2563EB",
+                        trimColor: "#93A6C8",
+                        screenColor: "#E8F2FF",
+                        antenna: true,
+                        floorShadow: true,
+                        speed: 1.0,
+                        pokeTrigger: mochi.pokeTrigger
                     )
-                    .frame(width: 120, height: 120)
+                    .frame(width: 130, height: 130)
                     .position(x: cx, y: cy)
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -437,11 +441,15 @@ struct MochiAnimatedHeroView: View {
                     .allowsHitTesting(false)
 
                     Group {
-                        MochiView(
-                            state: isHappy ? .finished : .idle,
-                            emote: isHappy ? .proud : nil,
-                            side: 104 * scale,
-                            fixedLook: CGPoint(x: lookX * 0.8, y: lookY * 0.8)
+                        RobotHeadView(
+                            state: isHappy ? .happy : .working,
+                            shape: .rectangle,
+                            size: 104 * scale,
+                            color: "#2563EB",
+                            trimColor: "#93A6C8",
+                            screenColor: "#E8F2FF",
+                            antenna: true,
+                            floorShadow: false
                         )
                     }
                 }

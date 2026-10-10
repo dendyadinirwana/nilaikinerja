@@ -134,36 +134,34 @@ enum MochiVoice {
 struct LiveCharacterView: View {
     /// Mood Mates emotion id, kept so the day-to-mood mapping does not change.
     var emotion: String
-    /// The APNG pack. Kept in the signature because `NotchSurface` still
-    /// threads it through, but the pack is no longer what gets drawn — see
-    /// `MochiView` below. The `living-icon/skippy` assets in the bundle are not
-    /// this app's character; they ship unused and are kept only so an old
-    /// build still resolves.
+    /// Kept for backwards compatibility with call sites.
     @ObservedObject var pack: LiveIconPack
     var pointSize: CGFloat
     var voice: MochiVoice = .idle
     var moodOverride: LiveIconPack.Mood? = nil
 
-    /// Map the day-to-mood value onto Mochi's state vocabulary.
-    private var pose: MochiPose {
+    /// Map the mood value onto RobotHeadState vocabulary.
+    private var state: RobotHeadState {
         switch moodOverride {
         case .excited, .thrilled: return .working
         case .angry: return .error
         case .somber: return .sleeping
         default:
-            // The collapsed capsule sits outside working hours more often than
-            // inside, so an off-hours Mochi sleeps rather than sitting alert.
             return .idle
         }
     }
 
     var body: some View {
-        // The real Mochi, drawn by the ported Coucou renderer.
-        MochiView(
-            state: pose,
-            emote: pose == .working ? .happy : nil,
-            side: pointSize,
-            fixedLook: CGPoint(x: 0.15, y: 0.1)
+        RobotHeadView(
+            state: state,
+            shape: .rectangle,
+            size: pointSize,
+            color: "#2563EB",
+            trimColor: "#93A6C8",
+            screenColor: "#E8F2FF",
+            antenna: false,
+            floorShadow: false
         )
+        .frame(width: pointSize, height: pointSize)
     }
 }
