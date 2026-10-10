@@ -1,6 +1,6 @@
 # NilaiKinerja — Panduan Instalasi & Penggunaan (macOS)
 
-Aplikasi pencatatan kinerja ASN berbasis hardware notch MacBook (Apple Silicon M1/M2/M3/M4) dengan pendamping maskot Mochi, smart drag & drop, dan Asisten AI.
+Aplikasi pencatatan kinerja ASN berbasis hardware notch MacBook (Apple Silicon M1/M2/M3/M4) dengan pendamping robot 3D (fayazara/robot-heads), smart drag & drop, dan Asisten AI.
 
 ---
 
@@ -62,9 +62,9 @@ Jika ingin menggunakan fitur Asisten AI:
 
 ### 1. Interaksi 3-State Notch
 * **State 1 — Idle (Default):**  
-  Menyatu dengan notch MacBook (hitam pekat) dihiasi garis tepi glowing halus. Mochi dan teks tersembunyi agar layar bersih.
+  Menyatu dengan notch MacBook (hitam pekat) dihiasi garis tepi glowing halus. Robot dan teks tersembunyi agar layar bersih.
 * **State 2 — Idle Hover (Preview 1 Detik):**  
-  Dekatkan mouse ke notch ➔ notch mekar menjadi kapsul, menampilkan Mini Mochi dan counter tugas.  
+  Dekatkan mouse ke notch ➔ notch mekar menjadi kapsul, menampilkan Mini Robot dan counter tugas.  
   - *Jika mouse keluar sebelum 1 detik:* Langsung surut kembali ke Idle.
   - *Tap/Klik Cepat:* Klik kapsul untuk langsung mekar tanpa menunggu 1 detik.
 * **State 3 — Expanded (Panel Penuh):**  
@@ -74,7 +74,7 @@ Jika ingin menggunakan fitur Asisten AI:
 Tarik berkas apa pun (PDF laporan, foto dokumentasi `.png`/`.jpg`, Word, Excel) langsung ke notch:
 - Notch otomatis langsung mekar seketika.
 - Form **Tambah Kegiatan** otomatis terisi (judul diambil dari nama berkas, durasi default 1 jam, dan berkas otomatis terlampir).
-- Mochi akan merayakan berkas yang berhasil diterima.
+- Robot akan merayakan berkas yang berhasil diterima.
 
 ### 3. Asisten AI & Model Selector
 - Akses menu chat via tab header atau shortcut `Cmd + 3`.
@@ -82,7 +82,7 @@ Tarik berkas apa pun (PDF laporan, foto dokumentasi `.png`/`.jpg`, Word, Excel) 
 
 ### 4. Tombol Pintasan (Keyboard Shortcuts)
 Saat panel terbuka:
-- `Cmd + 1` : Home / Maskot Mochi
+- `Cmd + 1` : Home / Maskot Robot
 - `Cmd + 2` : Daftar Kegiatan Hari Ini
 - `Cmd + 3` : Asisten AI
 - `Cmd + 4` : Form Tambah Kegiatan
@@ -103,3 +103,8 @@ Saat panel terbuka:
 ---
 
 *(Catatan: Aplikasi ini dikembangkan untuk kebutuhan operasional internal ASN).*
+
+---
+
+## 📄 Lisensi & Legalitas
+NilaiKinerja dan komponen animasi 3D Robot Head (`fayazara/robot-heads` oleh Fayaz Ahmed) dilisensikan secara penuh di bawah **MIT License**. Bebas didistribusikan, dimodifikasi, dan digunakan tanpa batasan aset karakter eksklusif.
