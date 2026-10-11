@@ -50,6 +50,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // released onto the desktop and macOS grows a Finder tile there.
         controller.onDragHover = { [weak self] dragging in
             self?.bridge.hoverState.setDrag(dragging)
+            if dragging {
+                if let mode = self?.bridge.panelMode, mode.screen != .home && mode.screen != .add {
+                    mode.screen = .home
+                }
+            }
             NotificationCenter.default.post(
                 name: .notchDragHoverChanged,
                 object: nil,

@@ -162,21 +162,20 @@ struct NotchSurface: View {
 
                 // Expanded content (header, activity list, forms, settings)
                 expandedContent
-                    .frame(width: targetSize.width, height: targetSize.height, alignment: .topLeading)
+                    .frame(width: targetSize.width, height: targetSize.height, alignment: .top)
                     .opacity(isExpanded ? 1 : 0)
-                    .offset(y: isExpanded ? 0 : -8)
                     .animation(
                         isExpanded
-                            ? .easeOut(duration: 0.22).delay(0.08)
+                            ? .easeOut(duration: 0.18)
                             : .easeIn(duration: 0.10),
                         value: isExpanded
                     )
                     .allowsHitTesting(isExpanded)
             }
-            .frame(width: targetSize.width, height: targetSize.height, alignment: .topLeading)
+            .frame(width: targetSize.width, height: targetSize.height, alignment: .top)
             .clipped()
         }
-        .frame(width: targetSize.width, height: targetSize.height, alignment: .topLeading)
+        .frame(width: targetSize.width, height: targetSize.height, alignment: .top)
         .animation(
             .spring(response: 0.44, dampingFraction: 0.78, blendDuration: 0.2),
             value: visualState
