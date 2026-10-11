@@ -31,6 +31,7 @@ final class AppSettings: ObservableObject {
         static let idleGlowEnabled = "settings.idleGlowEnabled"
         static let idleGlowIntensity = "settings.idleGlowIntensity"
         static let idleDwellDuration = "settings.idleDwellDuration"
+        static let autoCheckUpdates = "settings.autoCheckUpdates"
     }
 
     private let defaults: UserDefaults
@@ -80,6 +81,11 @@ final class AppSettings: ObservableObject {
     /// Duration pointer must dwell in State 2 (Idle Hover) before auto-expanding to State 3 (0.3s to 2.0s, default 1.0s).
     @Published var idleDwellDuration: Double {
         didSet { defaults.set(idleDwellDuration, forKey: Key.idleDwellDuration) }
+    }
+
+    /// Whether the app automatically checks for updates in background on launch.
+    @Published var autoCheckUpdates: Bool {
+        didSet { defaults.set(autoCheckUpdates, forKey: Key.autoCheckUpdates) }
     }
 
     // MARK: - Hover
@@ -290,6 +296,7 @@ final class AppSettings: ObservableObject {
             defaults, Key.idleGlowIntensity, 0.65, range: 0.2...1.0)
         self.idleDwellDuration = Self.read(
             defaults, Key.idleDwellDuration, 1.0, range: 0.3...2.0)
+        self.autoCheckUpdates = defaults.object(forKey: Key.autoCheckUpdates) as? Bool ?? true
         // No baked-in gateway secret: an old hardcoded literal went stale and made
         // every chat return invalid_api_key. AIKeyResolver reads the live 9router
         // key at request time instead.
@@ -352,6 +359,7 @@ final class AppSettings: ObservableObject {
         idleGlowEnabled = true
         idleGlowIntensity = 0.65
         idleDwellDuration = 1.0
+        autoCheckUpdates = true
         syncWorkSchedule()
     }
 }

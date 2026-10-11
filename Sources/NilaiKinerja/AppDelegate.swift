@@ -71,6 +71,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         observeDisplays()
         applyDemoMode()
 
+        if AppSettings.shared.autoCheckUpdates && !CommandLine.arguments.contains("--selftest") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                UpdateService.shared.checkForUpdates(explicit: false)
+            }
+        }
+
         NSLog(
             "[App] launched — SkyLight: \(controller.isUsingSkyLight), "
             + "notch: \(Int(metrics.collapsed.width))x\(Int(metrics.collapsed.height)), "

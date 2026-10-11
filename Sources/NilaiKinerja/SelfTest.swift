@@ -42,6 +42,7 @@ enum SelfTest {
         testDragDecisionTable()
         testVisualStateTransitions()
         testAppSettingsFeatures()
+        testUpdateSemVerComparison()
 
         print("")
         if failures.isEmpty {
@@ -457,6 +458,25 @@ enum SelfTest {
         check("reset restores workStartHour", settings.workStartHour == 7)
         check("reset restores reminderEnabled", settings.reminderEnabled == true)
         check("reset restores aiModel", settings.aiModel == "antigravity")
+        settings.autoCheckUpdates = false
+        check("autoCheckUpdates can be toggled", !settings.autoCheckUpdates)
+        settings.autoCheckUpdates = true
+        check("autoCheckUpdates can be enabled", settings.autoCheckUpdates)
+    }
+
+    // MARK: - OTA Update SemVer Comparison
+
+    private static func testUpdateSemVerComparison() {
+        print("\n— ota update semver comparison —")
+
+        check("1.0.1 is newer than 1.0.0", UpdateService.isVersion("1.0.1", newerThan: "1.0.0"))
+        check("v1.1.0 is newer than v1.0.9", UpdateService.isVersion("v1.1.0", newerThan: "v1.0.9"))
+        check("2.0.0 is newer than 1.9.9", UpdateService.isVersion("2.0.0", newerThan: "1.9.9"))
+        check("1.0.10 is newer than 1.0.9", UpdateService.isVersion("1.0.10", newerThan: "1.0.9"))
+        check("1.0.0 is not newer than 1.0.0", !UpdateService.isVersion("1.0.0", newerThan: "1.0.0"))
+        check("1.0.0 is not newer than 1.0.1", !UpdateService.isVersion("1.0.0", newerThan: "1.0.1"))
+        check("v1.0.0 is not newer than 1.0.0 (identical)", !UpdateService.isVersion("v1.0.0", newerThan: "1.0.0"))
+        check("currentVersion is non-empty", !UpdateService.shared.currentVersion.isEmpty)
     }
 
     // MARK: - 3-State Notch Visual Transitions

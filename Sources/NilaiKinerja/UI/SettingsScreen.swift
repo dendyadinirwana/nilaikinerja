@@ -7,12 +7,14 @@ enum SettingsTab: String, CaseIterable {
     case notch = "Notch & Interaksi"
     case ai = "Asisten AI"
     case schedule = "Kinerja & Berkas"
+    case about = "Tentang"
 
     var icon: String {
         switch self {
         case .notch: return "display"
         case .ai: return "sparkles"
         case .schedule: return "checklist"
+        case .about: return "info.circle"
         }
     }
 }
@@ -30,6 +32,7 @@ final class SettingsTabHolder: ObservableObject {
 struct SettingsScreen: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject private var aiService = AIChatService.shared
+    @ObservedObject private var updateService = UpdateService.shared
     @StateObject private var tabHolder = SettingsTabHolder()
     @Namespace private var settingsTabNamespace
     /// Switches back to the list when the user is done.
@@ -61,6 +64,8 @@ struct SettingsScreen: View {
                         aiTab
                     case .schedule:
                         scheduleAndStorageTab
+                    case .about:
+                        aboutTab
                     }
                 }
                 .padding(.horizontal, 22)
@@ -216,6 +221,283 @@ struct SettingsScreen: View {
             workScheduleSection
             reminderSection
             storageSection
+        }
+    }
+
+    // MARK: - Tab 4: Tentang & Pembaruan
+
+    private var aboutTab: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // App Identity Header
+            HStack(spacing: 14) {
+                RobotHeadView(
+                    state: .idle,
+                    shape: .rectangle,
+                    size: 50,
+                    color: "#2563EB",
+                    trimColor: "#93A6C8",
+                    screenColor: "#E8F2FF",
+                    antenna: false,
+                    floorShadow: false
+                )
+                .frame(width: 50, height: 50)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white.opacity(0.04))
+                )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text("NilaiKinerja")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+
+                        Text("v\(updateService.currentVersion)")
+                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(Color(hex: 0x60A5FA))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2.5)
+                            .background(
+                                Capsule()
+                                    .fill(Color(hex: 0x60A5FA).opacity(0.14))
+                            )
+                    }
+
+                    Text("Pencatatan kinerja ASN berbasis notch MacBook.")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(.white.opacity(0.55))
+                }
+            }
+            .padding(.bottom, 2)
+
+            // Update Card
+            section("Pembaruan Perangkat Lunak (OTA)") {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(updateStatusHeadline)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.white)
+
+                            Text(updateStatusSubheadline)
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(.white.opacity(0.50))
+                        }
+
+                        Spacer(minLength: 12)
+
+                        updateActionButton
+                    }
+
+                    // Changelog notes if an update is available
+                    if case .available(let version, let notes, _) = updateService.status {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Catatan Rilis \(version)")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color(hex: 0x60A5FA))
+                            ScrollView(showsIndicators: true) {
+                                Text(notes)
+                                    .font(.system(size: 11.5))
+                                    .foregroundStyle(.white.opacity(0.75))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .frame(maxHeight: 70)
+                            .padding(8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.white.opacity(0.04))
+                            )
+                        }
+                    }
+
+                    // Auto-check toggle
+                    HStack(alignment: .center) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Periksa Pembaruan Otomatis")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.white)
+                            Text("Cek pembaruan di latar belakang saat aplikasi baru dibuka.")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.white.opacity(0.48))
+                        }
+                        Spacer(minLength: 16)
+                        Toggle("", isOn: $settings.autoCheckUpdates)
+                            .labelsHidden()
+                            .toggleStyle(SwitchToggleStyle(tint: Color(hex: 0x2563EB)))
+                    }
+                    .padding(.top, 4)
+                }
+            }
+
+            // Project & License Information
+            section("Informasi Lisensi & Repositori") {
+                VStack(alignment: .leading, spacing: 10) {
+                    infoRow("Lisensi", value: "MIT License (100% Open Source)")
+                    infoRow("Maskot 3D", value: "fayazara/robot-heads (Fayaz Ahmed)")
+                    infoRow("Pengembang", value: "Dendy Adinirwana")
+
+                    Button {
+                        if let url = URL(string: "https://github.com/dendyadinirwana/nilaikinerja") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.up.right.square")
+                                .font(.system(size: 12))
+                            Text("Buka Repositori di GitHub")
+                                .font(.system(size: 12, weight: .semibold))
+                        }
+                        .foregroundStyle(Color(hex: 0x60A5FA))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 2)
+                }
+            }
+        }
+    }
+
+    // MARK: - Update Helpers
+
+    private var updateStatusHeadline: String {
+        switch updateService.status {
+        case .idle:
+            return "Versi Saat Ini: v\(updateService.currentVersion)"
+        case .checking:
+            return "Memeriksa Pembaruan..."
+        case .upToDate:
+            return "NilaiKinerja Sudah Versi Terbaru"
+        case .available(let version, _, _):
+            return "Pembaruan Tersedia: \(version)"
+        case .downloading:
+            return "Mengunduh Pembaruan..."
+        case .readyToRelaunch:
+            return "Pembaruan Siap Dipasang"
+        case .error(let msg):
+            return msg
+        }
+    }
+
+    private var updateStatusSubheadline: String {
+        switch updateService.status {
+        case .idle, .upToDate:
+            if let date = updateService.lastChecked {
+                let f = DateFormatter()
+                f.dateFormat = "HH:mm"
+                return "Terakhir diperiksa pukul \(f.string(from: date))"
+            }
+            return "GitHub: dendyadinirwana/nilaikinerja"
+        case .checking:
+            return "Menghubungi api.github.com..."
+        case .available:
+            return "Klik Unduh & Pasang untuk memperbarui aplikasi."
+        case .downloading(let progress):
+            return "Progres: \(Int(progress * 100))%"
+        case .readyToRelaunch:
+            return "Mulai ulang sekarang untuk beralih ke versi baru."
+        case .error:
+            return "Pastikan perangkat terhubung ke internet."
+        }
+    }
+
+    @ViewBuilder
+    private var updateActionButton: some View {
+        switch updateService.status {
+        case .idle, .upToDate, .error:
+            Button {
+                updateService.checkForUpdates(explicit: true)
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("Periksa Pembaruan")
+                        .font(.system(size: 12.5, weight: .semibold))
+                }
+                .padding(.horizontal, 14)
+                .frame(height: 36)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.08))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+                        )
+                )
+                .foregroundStyle(.white)
+            }
+            .buttonStyle(NotchPressStyle())
+
+        case .checking:
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.mini).tint(.white)
+                Text("Memeriksa...")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            .frame(height: 36)
+            .padding(.horizontal, 12)
+
+        case .available:
+            Button {
+                updateService.downloadAndInstall()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("Unduh & Pasang")
+                        .font(.system(size: 12.5, weight: .bold))
+                }
+                .padding(.horizontal, 16)
+                .frame(height: 36)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(hex: 0x2563EB))
+                )
+                .foregroundStyle(.white)
+            }
+            .buttonStyle(NotchPressStyle())
+
+        case .downloading(let progress):
+            HStack(spacing: 8) {
+                ProgressView(value: progress)
+                    .progressViewStyle(LinearProgressViewStyle(tint: Color(hex: 0x60A5FA)))
+                    .frame(width: 80)
+                Text("\(Int(progress * 100))%")
+                    .font(.system(size: 11.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+            .frame(height: 36)
+
+        case .readyToRelaunch:
+            Button {
+                updateService.relaunchApp()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("Mulai Ulang Aplikasi")
+                        .font(.system(size: 12.5, weight: .bold))
+                }
+                .padding(.horizontal, 16)
+                .frame(height: 36)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(hex: 0x059669))
+                )
+                .foregroundStyle(.white)
+            }
+            .buttonStyle(NotchPressStyle())
+        }
+    }
+
+    private func infoRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 12.5))
+                .foregroundStyle(.white.opacity(0.60))
+            Spacer()
+            Text(value)
+                .font(.system(size: 12.5, weight: .medium))
+                .foregroundStyle(.white.opacity(0.90))
         }
     }
 
