@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="assets/icon.png" width="120" height="120" alt="NilaiKinerja App Icon" />
-</p>
-
 <h1 align="center">NilaiKinerja</h1>
 
 <p align="center">
@@ -33,23 +29,22 @@
 ### 1. 🎛️ Interaksi 3-State Notch (MacBook M4 Native)
 Antarmuka notch beradaptasi secara cerdas dalam 3 tahap interaksi cairan (*liquid spring transitions*):
 
-```
-[ State 1: Idle ] 
-  Cutout fisik notch murni (hitam pekat) + Glowing Sky Blue border (#60A5FA glow)
-  (Layar bersih, maskot dan teks tersembunyi)
-       │
-       │  Kursor hover notch
-       ▼
-[ State 2: Idle Hover ]
-  Mekar horizontal menjadi kapsul preview (Mini Bot + Task Counter)
-  Dwell timer 1.0 detik berjalan
-  (Tap kapsul untuk mekar seketika; lepas sebelum 1 detik langsung kembali ke Idle)
-       │
-       ▼  Tahan kursor 1.0 detik (atau Drag Berkas / Pinned)
-[ State 3: Expanded ]
-  Mekar penuh ke bawah (lebar 640pt)
-  Menampilkan Dashboard Robot 3D, Daftar Tugas, Form Kegiatan, Chat AI, dan Pengaturan.
-  Otomatis collapse kembali saat kursor meninggalkan panel.
+```mermaid
+flowchart TD
+    classDef idle fill:#0F172A,stroke:#60A5FA,stroke-width:2px,color:#F8FAFC
+    classDef hover fill:#1E293B,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC
+    classDef expanded fill:#1E1B4B,stroke:#818CF8,stroke-width:2px,color:#F8FAFC
+
+    S1["<b>State 1: Idle</b><br/>• Cutout hardware notch murni (hitam pekat)<br/>• Glowing border Sky Blue (#60A5FA)<br/>• Layar bersih & minimalis"]:::idle
+
+    S2["<b>State 2: Idle Hover</b><br/>• Mekar horizontal menjadi kapsul preview<br/>• Menampilkan Mini Bot & Task Counter<br/>• Dwell timer 1.0 detik aktif"]:::hover
+
+    S3["<b>State 3: Expanded (640pt)</b><br/>• Mekar penuh ke bawah menampilkan antarmuka lengkap<br/>• Dashboard Robot 3D, Daftar Tugas, Chat AI & Settings<br/>• Auto-collapse saat kursor keluar"]:::expanded
+
+    S1 -->|"Kursor hover area notch"| S2
+    S2 -->|"Tahan kursor 1.0 detik / Drag berkas / Klik kapsul"| S3
+    S2 -.->|"Kursor lepas sebelum 1 detik"| S1
+    S3 -.->|"Kursor meninggalkan panel"| S1
 ```
 
 ---
