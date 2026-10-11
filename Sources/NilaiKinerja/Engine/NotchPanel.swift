@@ -30,10 +30,17 @@ final class NotchHostingView<Content: View>: NSHostingView<Content> {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        // While a drag is in flight, if a specific drop destination (like a
-        // dashed attachment box inside a form) claims the point, yield to it.
-        // Otherwise, claim the point for this hosting view so general notch drops
-        // land here instead of the Finder Desktop underneath.
+        let inSelf = convert(point, from: superview)
+        let inWindow = convert(inSelf, to: nil)
+        guard let window else { return nil }
+        let screenPoint = window.convertPoint(toScreen: inWindow)
+
+        // Crucial: Only accept hit tests within the active interactive rect of the notch!
+        // Outside this rect, return nil immediately so drags and clicks pass completely to Finder/Desktop.
+        guard let isPointInteractive, isPointInteractive(screenPoint) else {
+            return nil
+        }
+
         if isDragArmed {
             if let hit = super.hitTest(point), hit !== self, hit is DropView {
                 return hit
@@ -41,18 +48,6 @@ final class NotchHostingView<Content: View>: NSHostingView<Content> {
             return self
         }
 
-        guard let isPointInteractive else { return super.hitTest(point) }
-        // The point arrives in the superview's coordinates. Treating it as
-        // local — which an earlier version of this method did — made the gate
-        // reject almost everything, which is what left the header buttons
-        // unclickable.
-        let inSelf = convert(point, from: superview)
-        let inWindow = convert(inSelf, to: nil)
-        guard let window else { return nil }
-        let screenPoint = window.convertPoint(toScreen: inWindow)
-        if !isPointInteractive(screenPoint) {
-            return nil
-        }
         return super.hitTest(point)
     }
 
@@ -259,6 +254,9 @@ final class NotchWindowController: NSObject {
         let hostingView = NotchHostingView(rootView: content)
         hostingView.isPointInteractive = { [weak self] screenPoint in
             guard let self else { return false }
+            if self.dragHoldingOpen {
+                return NSMouseInRect(screenPoint, self.interactiveRect.insetBy(dx: -15, dy: -15), false)
+            }
             return NSMouseInRect(screenPoint, self.interactiveRect, false)
         }
         mirrorDragArmed = { [weak hostingView] armed in
@@ -338,7 +336,13 @@ final class NotchWindowController: NSObject {
         // event regardless of who is frontmost, so arming happens on the press
         // itself.
         dragBeginMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] _ in
-            MainActor.assumeIsolated { self?.armForDrag() }
+            MainActor.assumeIsolated {
+                guard let self, let metrics = self.metrics else { return }
+                let zone = NotchGeometry.dropZone(on: metrics.screen, collapsed: metrics.collapsed)
+                if NSMouseInRect(NSEvent.mouseLocation, zone, false) {
+                    self.armForDrag()
+                }
+            }
         }
         dragMoveMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDragged]) { [weak self] _ in
             MainActor.assumeIsolated { self?.pollForDrag() }
@@ -472,15 +476,25 @@ final class NotchWindowController: NSObject {
 
         switch decision {
         case .none:
-            break
+            if !dragHoldingOpen {
+                if dragArmed {
+                    dragArmed = false
+                    mirrorDragArmed?(false)
+                }
+                if !NSMouseInRect(NSEvent.mouseLocation, interactiveRect, false) && panel?.ignoresMouseEvents == false {
+                    panel?.ignoresMouseEvents = true
+                }
+            }
 
         case .dragBegan:
-            dragArmed = true
-            mirrorDragArmed?(true)
-            if panel?.ignoresMouseEvents == true {
-                panel?.ignoresMouseEvents = false
+            if NSMouseInRect(NSEvent.mouseLocation, activeZone, false) {
+                dragArmed = true
+                mirrorDragArmed?(true)
+                if panel?.ignoresMouseEvents == true {
+                    panel?.ignoresMouseEvents = false
+                }
+                NKLog("[Drag] began near notch — window armed as drop destination")
             }
-            NKLog("[Drag] began — window armed as drop destination")
 
         case .dragEnded:
             leaveZoneWorkItem?.cancel()
