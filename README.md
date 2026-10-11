@@ -183,7 +183,7 @@ Agar aplikasi dapat mendeteksi kursor kursor saat melintasi notch dan menerima g
 
 Proyek ini dilisensikan di bawah **[MIT License](LICENSE)**.
 
-- **NilaiKinerja:** Hak Cipta © 2026 Dendy Adinirwana.
+- **NilaiKinerja:** Hak Cipta © 2026 nirwna.
 - **3D Robot Heads Mascot:** Hak Cipta © 2026 Fayaz Ahmed ([`fayazara/robot-heads`](https://github.com/fayazara/robot-heads)).
 
 Bebas digunakan, dimodifikasi, dan didistribusikan secara komersial maupun non-komersial.

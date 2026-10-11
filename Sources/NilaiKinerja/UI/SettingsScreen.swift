@@ -334,7 +334,7 @@ struct SettingsScreen: View {
                 VStack(alignment: .leading, spacing: 10) {
                     infoRow("Lisensi", value: "MIT License (100% Open Source)")
                     infoRow("Maskot 3D", value: "fayazara/robot-heads (Fayaz Ahmed)")
-                    infoRow("Pengembang", value: "Dendy Adinirwana")
+                    infoRow("Pengembang", value: "nirwna")
 
                     Button {
                         if let url = URL(string: "https://github.com/dendyadinirwana/nilaikinerja") {
