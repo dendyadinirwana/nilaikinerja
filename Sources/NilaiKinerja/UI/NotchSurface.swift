@@ -309,8 +309,14 @@ struct NotchSurface: View {
                     mode.prefillAddFrom = nil
                     mode.prefillAddTo = nil
                     today.refresh()
-                    mode.showToast("Kegiatan berhasil ditambahkan")
-                    mode.screen = .list
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) {
+                        mode.screen = .home
+                    }
+                    NotificationCenter.default.post(
+                        name: .notchDropCelebrated,
+                        object: nil,
+                        userInfo: ["title": "Kegiatan Berhasil Disimpan"]
+                    )
                 },
                 onCancel: {
                     mode.prefillAddTitle = nil
@@ -318,7 +324,9 @@ struct NotchSurface: View {
                     mode.prefillAddURLs = nil
                     mode.prefillAddFrom = nil
                     mode.prefillAddTo = nil
-                    mode.screen = .list
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
+                        mode.screen = .home
+                    }
                 }
             )
         case .chat:
@@ -340,13 +348,21 @@ struct NotchSurface: View {
                     store: coordinator.store,
                     onSave: {
                         today.refresh()
-                        mode.showToast("Perubahan berhasil disimpan")
                         mode.editing = nil
-                        mode.screen = .list
+                        withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) {
+                            mode.screen = .home
+                        }
+                        NotificationCenter.default.post(
+                            name: .notchDropCelebrated,
+                            object: nil,
+                            userInfo: ["title": "Perubahan Berhasil Disimpan"]
+                        )
                     },
                     onCancel: {
                         mode.editing = nil
-                        mode.screen = .list
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
+                            mode.screen = .list
+                        }
                     }
                 )
             } else {
@@ -480,10 +496,14 @@ struct NotchSurface: View {
                         mode.prefillAddURLs = nil
                         mode.prefillAddFrom = nil
                         mode.prefillAddTo = nil
+                        mode.screen = .home
                     }
                     today.refresh()
-                    mode.showToast("Kegiatan berhasil ditambahkan")
-                    mode.screen = .list
+                    NotificationCenter.default.post(
+                        name: .notchDropCelebrated,
+                        object: nil,
+                        userInfo: ["title": "Kegiatan Berhasil Disimpan"]
+                    )
                 },
                 onCancel: {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
@@ -493,6 +513,7 @@ struct NotchSurface: View {
                         mode.prefillAddURLs = nil
                         mode.prefillAddFrom = nil
                         mode.prefillAddTo = nil
+                        mode.screen = .home
                     }
                 }
             )
@@ -623,10 +644,10 @@ struct NotchSurface: View {
                 today.refresh()
                 mode.showToast("Kegiatan dihapus")
             },
-            height: 74,
+            height: 76,
             radius: 14,
             actionWidth: 80,
-            marginBottom: 14,
+            marginBottom: 12,
             // Tapping the row body is the primary way to read a session: the
             // swipe actions are for Hapus and Rekap, so a plain press opens the
             // same editor Rekap does.
@@ -636,63 +657,80 @@ struct NotchSurface: View {
             },
             pose: pose
         ) {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
                 // A filled emerald dot marks the running session, while a hollow
                 // ring marks finished sessions (clear status affordance).
                 if session.isRunning {
                     Circle()
                         .fill(Color(hex: 0x34D399))
                         .frame(width: 8, height: 8)
-                        .padding(.top, 6)
                 } else {
                     Circle()
                         .strokeBorder(Color.white.opacity(0.35), lineWidth: 1.5)
                         .frame(width: 8, height: 8)
-                        .padding(.top, 6)
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 3.5) {
                     Text(session.title ?? "Tanpa judul")
-                        .font(.system(size: 16, weight: session.isRunning ? .bold : .semibold))
+                        .font(.system(size: 15, weight: session.isRunning ? .bold : .semibold))
                         .foregroundStyle(session.isRunning ? .white : .white.opacity(0.94))
                         .lineLimit(1)
 
-                    HStack(spacing: 8) {
-                        Text("\(today.timeLabel(session.startedAt))–\(today.timeLabel(session.endedAt ?? today.referenceDate))")
-                            .foregroundStyle(.white.opacity(0.72))
+                    if let subtitle = (session.outcome?.isEmpty == false ? session.outcome : session.detail), !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.50))
+                            .lineLimit(1)
+                    }
+
+                    HStack(spacing: 6) {
+                        Text("\(today.timeLabel(session.startedAt)) – \(today.timeLabel(session.endedAt ?? today.referenceDate))")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.68))
+
+                        Text("•")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.30))
 
                         Text(WorkSchedule.label(today.workedSeconds(for: session)))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(Color(hex: 0x60A5FA))
-                            .fontWeight(.semibold)
 
                         if !session.isReportable {
-                            Text("belum diisi")
+                            Text("Belum Rekap")
+                                .font(.system(size: 10.5, weight: .semibold))
                                 .foregroundStyle(Color(hex: 0xFBBF24))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 1.5)
+                                .background(Capsule().fill(Color(hex: 0xFBBF24).opacity(0.14)))
                         }
                     }
-                    .font(.system(size: 13.5, weight: .medium))
                 }
 
                 Spacer(minLength: 0)
 
                 let count = today.attachmentCount(for: session).count
                 if count > 0 {
-                    HStack(spacing: 3) {
+                    HStack(spacing: 3.5) {
                         Image(systemName: "paperclip")
+                            .font(.system(size: 10.5, weight: .bold))
                         Text("\(count)")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
                     }
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.60))
-                    .padding(.top, 4)
+                    .foregroundStyle(Color(hex: 0x60A5FA))
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3.5)
+                    .background(
+                        Capsule().fill(Color(hex: 0x60A5FA).opacity(0.14))
+                    )
                 }
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.30))
-                    .padding(.top, 6)
             }
             .padding(.horizontal, 14)
-            .frame(height: 74)
+            .frame(height: 76)
             .frame(maxWidth: .infinity, alignment: .leading)
 
             // `Content` is fixed to `AnyView` at the call site so the nested

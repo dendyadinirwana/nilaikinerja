@@ -61,7 +61,7 @@ enum NotchGeometry {
     static let homeWithFormHeight: CGFloat = 645
     static let emptyListHeight: CGFloat = 255
     static let addFormHeight: CGFloat = 520
-    static let editFormHeight: CGFloat = 420
+    static let editFormHeight: CGFloat = 480
     static let checkpointHeight: CGFloat = 360
     /// Grown by one tab-bar row when the chat adopted the shared notch header,
     /// so the conversation area keeps the room it had before.
