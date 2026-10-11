@@ -33,6 +33,7 @@ struct SettingsScreen: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject private var aiService = AIChatService.shared
     @ObservedObject private var updateService = UpdateService.shared
+    @ObservedObject private var permissionManager = SystemPermissionManager.shared
     @StateObject private var tabHolder = SettingsTabHolder()
     @Namespace private var settingsTabNamespace
     /// Switches back to the list when the user is done.
@@ -326,6 +327,97 @@ struct SettingsScreen: View {
                             .toggleStyle(SwitchToggleStyle(tint: Color(hex: 0x2563EB)))
                     }
                     .padding(.top, 4)
+                }
+            }
+
+            // System Permissions Status Card
+            section("Izin & Akses Sistem macOS") {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Aksesibilitas (Tracking & Drag-Drop)")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.white)
+                            Text("Dibutuhkan untuk memantau interaksi kursor di atas notch.")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.white.opacity(0.48))
+                        }
+                        Spacer(minLength: 16)
+                        if permissionManager.isAccessibilityGranted {
+                            HStack(spacing: 5) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text("Diizinkan")
+                                    .font(.system(size: 11.5, weight: .semibold))
+                            }
+                            .foregroundStyle(Color(hex: 0x10B981))
+                            .padding(.horizontal, 10)
+                            .frame(height: 36)
+                            .background(
+                                Capsule()
+                                    .fill(Color(hex: 0x10B981).opacity(0.12))
+                            )
+                        } else {
+                            Button {
+                                permissionManager.openAccessibilitySettings()
+                            } label: {
+                                Text("Buka Pengaturan")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .padding(.horizontal, 12)
+                                    .frame(height: 36)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color(hex: 0x2563EB))
+                                    )
+                                    .foregroundStyle(.white)
+                            }
+                            .buttonStyle(NotchPressStyle())
+                        }
+                    }
+
+                    Divider().overlay(Color.white.opacity(0.06))
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Pemberitahuan Sistem (Notifikasi)")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.white)
+                            Text("Dibutuhkan untuk pengingat checkpoint kinerja berkala.")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.white.opacity(0.48))
+                        }
+                        Spacer(minLength: 16)
+                        if permissionManager.isNotificationGranted {
+                            HStack(spacing: 5) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text("Diizinkan")
+                                    .font(.system(size: 11.5, weight: .semibold))
+                            }
+                            .foregroundStyle(Color(hex: 0x10B981))
+                            .padding(.horizontal, 10)
+                            .frame(height: 36)
+                            .background(
+                                Capsule()
+                                    .fill(Color(hex: 0x10B981).opacity(0.12))
+                            )
+                        } else {
+                            Button {
+                                permissionManager.requestNotificationPermission()
+                            } label: {
+                                Text("Minta Izin")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .padding(.horizontal, 12)
+                                    .frame(height: 36)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color.white.opacity(0.12))
+                                    )
+                                    .foregroundStyle(.white)
+                            }
+                            .buttonStyle(NotchPressStyle())
+                        }
+                    }
                 }
             }
 

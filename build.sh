@@ -58,6 +58,8 @@ cat > "$APP_PATH/Contents/Info.plist" <<PLIST
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>
+  <key>NSAppleEventsUsageDescription</key><string>NilaiKinerja memerlukan izin sistem untuk memantau pergerakan mouse di sekitar notch MacBook dan drag &amp; drop dokumen.</string>
+  <key>NSSystemAdministrationUsageDescription</key><string>NilaiKinerja memerlukan izin aksesibilitas untuk merespons interaksi desktop.</string>
   <key>NSHumanReadableCopyright</key><string>Hak Cipta © 2026 nirwna. MIT License.</string>
 </dict>
 </plist>

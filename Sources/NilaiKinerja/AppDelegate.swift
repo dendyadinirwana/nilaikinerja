@@ -76,6 +76,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         observeDisplays()
         applyDemoMode()
 
+        if !CommandLine.arguments.contains("--selftest") {
+            SystemPermissionManager.shared.requestPermissionsOnFirstLaunchIfNeeded()
+        }
+
         if AppSettings.shared.autoCheckUpdates && !CommandLine.arguments.contains("--selftest") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
                 UpdateService.shared.checkForUpdates(explicit: false)

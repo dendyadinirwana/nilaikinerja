@@ -346,6 +346,12 @@ enum SelfTest {
         check("drop handler rejects spoofed file", !dropFakeSuccess)
         check("drop handler error mentions fake format", dropFakeReason.contains("bukan") || dropFakeReason.contains("Executable"))
 
+        // 5. System permission manager status check
+        let permMgr = SystemPermissionManager.shared
+        permMgr.checkStatus()
+        check("permission manager accessibility status is boolean", permMgr.isAccessibilityGranted == true || permMgr.isAccessibilityGranted == false)
+        check("permission manager notification status is boolean", permMgr.isNotificationGranted == true || permMgr.isNotificationGranted == false)
+
         let sessions = store.sessions
         check("one session was saved in store", sessions.count == 1)
         if let s = sessions.first {
