@@ -89,7 +89,8 @@ final class NotchHostingView<Content: View>: NSHostingView<Content> {
     }
 
     override func draggingExited(_ sender: NSDraggingInfo?) {
-        onDragHover?(false)
+        // AppKit calls draggingExited when moving across subview boundaries.
+        // True window exit is handled safely and stably by pollForDrag.
     }
 
     override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
@@ -427,6 +428,7 @@ final class NotchWindowController: NSObject {
     /// cancelled drag must not leave the panel pinned open.
     private var dragDeliveredFiles = false
     private var lastDeliveredDropTime: TimeInterval = 0
+    private var leaveZoneWorkItem: DispatchWorkItem?
 
     /// Called from the drop path once files are genuinely in hand.
     func noteDragDeliveredFiles() {
@@ -451,9 +453,16 @@ final class NotchWindowController: NSObject {
         guard let metrics else { return }
         let leftDown = NSEvent.pressedMouseButtons & leftMouseButtonMask != 0
         let collapsedZone = NotchGeometry.dropZone(on: metrics.screen, collapsed: metrics.collapsed)
-        let activeZone = (dragHoldingOpen || presentedExpanded)
-            ? collapsedZone.union(interactiveRect.insetBy(dx: -40, dy: -40))
-            : collapsedZone
+        let activeZone: NSRect
+        if dragHoldingOpen || presentedExpanded {
+            let width: CGFloat = max(metrics.screen.frame.width * 0.75, 1000)
+            let x = floor(metrics.screen.frame.midX - width / 2)
+            let topY = metrics.screen.frame.maxY + 50
+            let bottomY = metrics.screen.frame.maxY - 720
+            activeZone = NSRect(x: x, y: bottomY, width: width, height: topY - bottomY)
+        } else {
+            activeZone = collapsedZone
+        }
         let decision = dragDecision(
             leftDown: leftDown,
             wasDown: dragButtonWasDown,
@@ -476,12 +485,25 @@ final class NotchWindowController: NSObject {
             NKLog("[Drag] began — window armed as drop destination")
 
         case .dragEnded:
+            leaveZoneWorkItem?.cancel()
+            leaveZoneWorkItem = nil
             endDragHold()
 
         case .leaveZone:
-            endDragHold()
+            // Do NOT snap shut immediately! Give the user a generous grace period (1.5s)
+            // so hovering around controls or hesitating never folds the panel mid-drag.
+            if leaveZoneWorkItem == nil {
+                let work = DispatchWorkItem { [weak self] in
+                    self?.leaveZoneWorkItem = nil
+                    self?.endDragHold()
+                }
+                leaveZoneWorkItem = work
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: work)
+            }
 
         case .enterZone, .holdOpen:
+            leaveZoneWorkItem?.cancel()
+            leaveZoneWorkItem = nil
             dragArmed = true
             mirrorDragArmed?(true)
             if panel?.ignoresMouseEvents == true {
@@ -502,6 +524,8 @@ final class NotchWindowController: NSObject {
 
     /// Releases the panel after a drag finishes and restores click-through.
     private func endDragHold() {
+        leaveZoneWorkItem?.cancel()
+        leaveZoneWorkItem = nil
         let wasOpen = dragHoldingOpen
         dragHoldingOpen = false
 
@@ -662,19 +686,14 @@ final class NotchWindowController: NSObject {
             if panel?.ignoresMouseEvents == true {
                 panel?.ignoresMouseEvents = false
             }
+            leaveZoneWorkItem?.cancel()
+            leaveZoneWorkItem = nil
             collapseWorkItem?.cancel()
             collapseWorkItem = nil
             if openWorkItem == nil {
                 openWorkItem = nil
                 onDragHover?(true)
             }
-        } else if collapseWorkItem == nil {
-            let work = DispatchWorkItem { [weak self] in
-                self?.collapseWorkItem = nil
-                self?.onDragHover?(false)
-            }
-            collapseWorkItem = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + collapseDelay, execute: work)
         }
     }
 

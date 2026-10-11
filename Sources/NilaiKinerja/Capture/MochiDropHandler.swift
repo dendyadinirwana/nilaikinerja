@@ -110,9 +110,22 @@ enum MochiDropHandler {
         }
 
         if immediate {
-            NotificationCenter.default.post(name: .notchExpandPanel, object: nil)
-            populateForm()
-            return (true, cleanedTitle)
+            let validation = FileContentValidator.validate(url: firstURL)
+            switch validation {
+            case .invalid(let reason):
+                NotificationCenter.default.post(name: .notchExpandPanel, object: nil)
+                NotificationCenter.default.post(
+                    name: .notchDropFailed,
+                    object: nil,
+                    userInfo: ["reason": reason]
+                )
+                NSSound.beep()
+                return (false, reason)
+            case .valid:
+                NotificationCenter.default.post(name: .notchExpandPanel, object: nil)
+                populateForm()
+                return (true, cleanedTitle)
+            }
         }
 
         // 1. Expand panel and stay on home stage (form closed) to display scanning mode
@@ -132,9 +145,24 @@ enum MochiDropHandler {
             ]
         )
 
-        // 3. After scanning period (1.5s max 2s), transition smoothly to AddActivityForm!
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            populateForm()
+        // 3. Perform REAL deep content validation during the 1.5s scanning window
+        DispatchQueue.global(qos: .userInitiated).async {
+            let validation = FileContentValidator.validate(url: firstURL)
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                switch validation {
+                case .invalid(let reason):
+                    NotificationCenter.default.post(
+                        name: .notchDropFailed,
+                        object: nil,
+                        userInfo: ["reason": reason]
+                    )
+                    NSSound.beep()
+                case .valid(let format, _):
+                    NKLog("[Validator] File verified genuine: \(format) for \(firstURL.lastPathComponent)")
+                    populateForm()
+                }
+            }
         }
 
         return (true, cleanedTitle)

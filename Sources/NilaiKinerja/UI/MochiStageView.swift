@@ -167,7 +167,7 @@ struct MochiStageView: View {
                             ProgressView()
                                 .controlSize(.mini)
                                 .tint(Color(hex: 0x38BDF8))
-                            Text(mochi.scanningFilename != nil ? "Memindai \(mochi.scanningFilename!)..." : "Memindai Berkas...")
+                            Text(mochi.scanningFilename != nil ? "Memindai & Memverifikasi \(mochi.scanningFilename!)..." : "Memindai & Memverifikasi Berkas...")
                                 .font(.system(size: 11.5, weight: .semibold))
                                 .lineLimit(1)
                         }

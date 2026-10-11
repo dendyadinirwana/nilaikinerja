@@ -258,7 +258,7 @@ enum SelfTest {
 
         // 2. Real file drop execution into PanelMode and draft prefill
         let fixture = FileManager.default.temporaryDirectory.appendingPathComponent("selftest-mochi-\(UUID().uuidString).pdf")
-        try? "PDF-DUMMY-CONTENT".data(using: .utf8)?.write(to: fixture)
+        try? "%PDF-1.4\n%Real-PDF-Header-Fixture".data(using: .utf8)?.write(to: fixture)
         defer { try? FileManager.default.removeItem(at: fixture) }
 
         let mode = PanelMode()
@@ -313,6 +313,38 @@ enum SelfTest {
         let (badSuccess, badTitle) = MochiDropHandler.handleDrop(urls: [badFixture], coordinator: coord, mode: badMode)
         check("unsupported file drop returns failure", !badSuccess)
         check("unsupported file drop returns error reason", badTitle.contains("tidak didukung"))
+
+        // 4. Real deep content validation tests (magic numbers / anti-spoofing)
+        // A. Spoofed PDF: executable (MZ) renamed to .pdf
+        let fakeExePdf = FileManager.default.temporaryDirectory.appendingPathComponent("fake-malware-\(UUID().uuidString).pdf")
+        let exeBytes: [UInt8] = [0x4D, 0x5A, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00]
+        try? Data(exeBytes).write(to: fakeExePdf)
+        defer { try? FileManager.default.removeItem(at: fakeExePdf) }
+        let fakePdfResult = FileContentValidator.validate(url: fakeExePdf)
+        check("spoofed pdf with MZ header is rejected", fakePdfResult != .valid(format: "PDF", mime: "application/pdf"))
+        if case .invalid(let reason) = fakePdfResult {
+            check("rejected reason identifies executable", reason.contains("Executable") || reason.contains("bukan"))
+        }
+
+        // B. Spoofed DOCX: text file renamed to .docx
+        let fakeDocx = FileManager.default.temporaryDirectory.appendingPathComponent("fake-doc-\(UUID().uuidString).docx")
+        try? "Ini file teks biasa tapi di rename ke docx".data(using: .utf8)?.write(to: fakeDocx)
+        defer { try? FileManager.default.removeItem(at: fakeDocx) }
+        let fakeDocxResult = FileContentValidator.validate(url: fakeDocx)
+        check("spoofed docx without zip header is rejected", fakeDocxResult != .valid(format: "DOCX", mime: "application/vnd.openxmlformats"))
+
+        // C. Real PNG with valid magic bytes
+        let realPng = FileManager.default.temporaryDirectory.appendingPathComponent("real-img-\(UUID().uuidString).png")
+        let pngBytes: [UInt8] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D]
+        try? Data(pngBytes).write(to: realPng)
+        defer { try? FileManager.default.removeItem(at: realPng) }
+        let pngResult = FileContentValidator.validate(url: realPng)
+        check("real png with magic bytes is valid", pngResult == .valid(format: "PNG", mime: "image/png"))
+
+        // D. Dropping spoofed file through MochiDropHandler returns failure with error
+        let (dropFakeSuccess, dropFakeReason) = MochiDropHandler.handleDrop(urls: [fakeExePdf], coordinator: coord, mode: badMode)
+        check("drop handler rejects spoofed file", !dropFakeSuccess)
+        check("drop handler error mentions fake format", dropFakeReason.contains("bukan") || dropFakeReason.contains("Executable"))
 
         let sessions = store.sessions
         check("one session was saved in store", sessions.count == 1)
