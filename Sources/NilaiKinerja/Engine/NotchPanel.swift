@@ -283,7 +283,11 @@ final class NotchWindowController: NSObject {
                 self?.noteDragDeliveredFiles()
             }
         }
-        hostingView.onDropURLs = { urls in
+        hostingView.onDropURLs = { [weak self] urls in
+            guard let self else { return }
+            let now = CACurrentMediaTime()
+            guard now - self.lastDeliveredDropTime > 0.8 else { return }
+            self.lastDeliveredDropTime = now
             NotificationCenter.default.post(
                 name: .notchDroppedFiles,
                 object: nil,
@@ -422,6 +426,7 @@ final class NotchWindowController: NSObject {
     /// it a cancelled drag is indistinguishable from a successful one, and a
     /// cancelled drag must not leave the panel pinned open.
     private var dragDeliveredFiles = false
+    private var lastDeliveredDropTime: TimeInterval = 0
 
     /// Called from the drop path once files are genuinely in hand.
     func noteDragDeliveredFiles() {
@@ -796,6 +801,10 @@ extension NotchWindowController: NSDraggingDestination {
     }
 
     func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let now = CACurrentMediaTime()
+        guard now - lastDeliveredDropTime > 0.8 else { return true }
+        lastDeliveredDropTime = now
+
         let urls = Self.extractURLs(from: sender)
         guard !urls.isEmpty else {
             NSLog("[Drag] WindowController performDragOperation — no file URLs")

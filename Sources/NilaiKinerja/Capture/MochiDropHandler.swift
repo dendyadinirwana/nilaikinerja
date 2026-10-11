@@ -43,6 +43,8 @@ enum MochiDropHandler {
         return false
     }
 
+    private static var lastDropTime: TimeInterval = 0
+
     @discardableResult
     static func handleDrop(
         urls: [URL],
@@ -50,6 +52,11 @@ enum MochiDropHandler {
         mode: PanelMode?,
         immediate: Bool = CommandLine.arguments.contains("--selftest")
     ) -> (success: Bool, title: String) {
+        let nowStamp = CACurrentMediaTime()
+        if !immediate {
+            guard nowStamp - lastDropTime > 0.8 else { return (false, "") }
+            lastDropTime = nowStamp
+        }
         guard let firstURL = urls.first else { return (false, "") }
 
         // Reject if any dropped file is not PDF, Word, Excel, or an Image
@@ -89,9 +96,9 @@ enum MochiDropHandler {
             mode?.prefillAddFrom = now
             mode?.prefillAddTo = oneHourLater
 
+            mode?.isHomeFormOpen = false
             withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) {
-                mode?.isHomeFormOpen = true
-                mode?.screen = .home
+                mode?.screen = .add
             }
 
             NotificationCenter.default.post(

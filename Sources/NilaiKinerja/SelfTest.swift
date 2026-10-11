@@ -267,7 +267,7 @@ enum SelfTest {
 
         check("mochi drop succeeds", success)
         check("mochi drop returns non-empty title", !title.isEmpty)
-        check("mochi drop opens form on home screen with Mochi", mode.screen == .home && mode.isHomeFormOpen)
+        check("mochi drop opens add activity form", mode.screen == .add)
         check("mochi drop sets prefillAddTitle", mode.prefillAddTitle == title)
         check("mochi drop sets prefillAddURLs", mode.prefillAddURLs?.count == 1)
         check("mochi drop sets 1 hour duration", mode.prefillAddFrom != nil && mode.prefillAddTo != nil)

@@ -990,7 +990,9 @@ final class TodaySummary: ObservableObject {
         // The work is trivial — recomputing `Date()` and the derived figures
         // from an in-memory array costs nothing at this rate.
         let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.refresh() }
+            DispatchQueue.main.async {
+                self?.refresh()
+            }
         }
         RunLoop.main.add(t, forMode: .common)
         ticker = t
