@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 /// The "Tambah kegiatan" form: a single sheet-style panel with a time range,
 /// title, detail, and document drop, ending in Simpan / Batal.
@@ -545,7 +546,13 @@ struct AddActivityForm: View {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
-        panel.allowedContentTypes = [.image, .pdf]
+        var types: [UTType] = [.image, .pdf]
+        if let docx = UTType(filenameExtension: "docx") { types.append(docx) }
+        if let doc = UTType(filenameExtension: "doc") { types.append(doc) }
+        if let xlsx = UTType(filenameExtension: "xlsx") { types.append(xlsx) }
+        if let xls = UTType(filenameExtension: "xls") { types.append(xls) }
+        if let csv = UTType(filenameExtension: "csv") { types.append(csv) }
+        panel.allowedContentTypes = types
         panel.prompt = "Lampirkan"
         // Capture the draft directly: this is a value-type view, so there is
         // no `self` worth weak-referencing, and the draft is what needs to
@@ -638,6 +645,16 @@ final class ActivityDraft: ObservableObject {
     /// document is attached now or later.
     func add(_ urls: [URL]) {
         for url in urls {
+            guard MochiDropHandler.isSupported(url: url) else {
+                let ext = url.pathExtension.isEmpty ? "FILE" : url.pathExtension.uppercased()
+                NotificationCenter.default.post(
+                    name: .notchDropFailed,
+                    object: nil,
+                    userInfo: ["reason": "Format .\(ext) tidak didukung (Hanya PDF, Word, Excel, Gambar)"]
+                )
+                NSSound.beep()
+                continue
+            }
             guard let stored = try? AttachmentStore.store(url) else { continue }
             // Re-adding the same document within one draft is a no-op.
             guard !attachments.contains(where: { $0.sha == stored.sha256 }) else { continue }

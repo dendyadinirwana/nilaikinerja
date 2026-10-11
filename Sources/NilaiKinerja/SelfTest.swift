@@ -292,6 +292,25 @@ enum SelfTest {
         let saved = draft.persist(using: store)
         check("draft persist succeeds", saved)
 
+        // 3. Supported format checks & rejection of unsupported formats
+        check("pdf is supported", MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/doc.pdf")))
+        check("docx is supported", MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/doc.docx")))
+        check("xlsx is supported", MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/sheet.xlsx")))
+        check("png image is supported", MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/photo.png")))
+        check("zip archive is not supported", !MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/archive.zip")))
+        check("mp4 video is not supported", !MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/video.mp4")))
+        check("exe binary is not supported", !MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/setup.exe")))
+
+        // Test rejection of unsupported file drop triggering error state
+        let badFixture = FileManager.default.temporaryDirectory.appendingPathComponent("selftest-unsupported-\(UUID().uuidString).zip")
+        try? "ZIP-DUMMY".data(using: .utf8)?.write(to: badFixture)
+        defer { try? FileManager.default.removeItem(at: badFixture) }
+
+        let badMode = PanelMode()
+        let (badSuccess, badTitle) = MochiDropHandler.handleDrop(urls: [badFixture], coordinator: coord, mode: badMode)
+        check("unsupported file drop returns failure", !badSuccess)
+        check("unsupported file drop returns error reason", badTitle.contains("tidak didukung"))
+
         let sessions = store.sessions
         check("one session was saved in store", sessions.count == 1)
         if let s = sessions.first {

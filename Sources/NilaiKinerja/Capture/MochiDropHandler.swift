@@ -11,6 +11,18 @@ import SwiftUI
 /// - Automatic panel expansion so the user can immediately review and save.
 @MainActor
 enum MochiDropHandler {
+    /// Allowed formats: PDF, Word (docx/doc), Excel (xlsx/xls/csv), and Images.
+    static let supportedExtensions: Set<String> = [
+        "pdf",
+        "docx", "doc",
+        "xlsx", "xls", "csv",
+        "png", "jpg", "jpeg", "heic", "webp", "gif", "svg", "tiff", "bmp", "ico"
+    ]
+
+    static func isSupported(url: URL) -> Bool {
+        supportedExtensions.contains(url.pathExtension.lowercased())
+    }
+
     @discardableResult
     static func handleDrop(
         urls: [URL],
@@ -18,6 +30,25 @@ enum MochiDropHandler {
         mode: PanelMode?
     ) -> (success: Bool, title: String) {
         guard let firstURL = urls.first else { return (false, "") }
+
+        // Reject if any dropped file is not PDF, Word, Excel, or an Image
+        let unsupported = urls.filter { !isSupported(url: $0) }
+        if !unsupported.isEmpty {
+            let ext = unsupported.first?.pathExtension.isEmpty == false
+                ? unsupported.first!.pathExtension.uppercased()
+                : "FILE"
+            let errorReason = "Format .\(ext) tidak didukung (Hanya PDF, Word, Excel, Gambar)"
+
+            // Open panel so user sees the robot head in error state with red pill
+            NotificationCenter.default.post(name: .notchExpandPanel, object: nil)
+            NotificationCenter.default.post(
+                name: .notchDropFailed,
+                object: nil,
+                userInfo: ["reason": errorReason]
+            )
+            NSSound.beep()
+            return (false, errorReason)
+        }
 
         let cleanedTitle = cleanActivityTitle(from: firstURL)
 

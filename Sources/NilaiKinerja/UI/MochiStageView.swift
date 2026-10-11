@@ -7,12 +7,15 @@ import AppKit
 @MainActor
 final class MochiState: ObservableObject {
     @Published var isHappy: Bool = false
+    @Published var isError: Bool = false
     @Published var tapCount: Int = 0
     @Published var isDragOver: Bool = false
     @Published var dropSuccessTitle: String? = nil
+    @Published var dropErrorTitle: String? = nil
     @Published var pokeTrigger: Int = 0
 
     private var happyTask: Task<Void, Never>?
+    private var errorTask: Task<Void, Never>?
 
     func reactToTap() {
         tapCount += 1
@@ -29,6 +32,10 @@ final class MochiState: ObservableObject {
     }
 
     func reactToDrop(title: String) {
+        errorTask?.cancel()
+        isError = false
+        dropErrorTitle = nil
+
         dropSuccessTitle = title
         pokeTrigger += 1
         isHappy = true
@@ -38,6 +45,23 @@ final class MochiState: ObservableObject {
             if !Task.isCancelled {
                 self.isHappy = false
                 self.dropSuccessTitle = nil
+            }
+        }
+    }
+
+    func reactToError(reason: String) {
+        happyTask?.cancel()
+        isHappy = false
+        dropSuccessTitle = nil
+
+        isError = true
+        dropErrorTitle = reason
+        errorTask?.cancel()
+        errorTask = Task {
+            try? await Task.sleep(nanoseconds: 3_500_000_000)
+            if !Task.isCancelled {
+                self.isError = false
+                self.dropErrorTitle = nil
             }
         }
     }
@@ -154,6 +178,21 @@ struct MochiStageView: View {
                         .shadow(color: Color(hex: 0x2563EB).opacity(0.5), radius: 8, y: 3)
                         .position(x: cx, y: cy - 78)
                         .allowsHitTesting(false)
+                    } else if let error = mochi.dropErrorTitle {
+                        HStack(spacing: 6) {
+                            Image(systemName: "xmark.octagon.fill")
+                                .font(.system(size: 11, weight: .bold))
+                            Text(error)
+                                .font(.system(size: 11.5, weight: .semibold))
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 5)
+                        .background(Capsule().fill(Color(hex: 0xDC2626)))
+                        .shadow(color: Color(hex: 0xDC2626).opacity(0.4), radius: 8, y: 3)
+                        .position(x: cx, y: cy - 78)
+                        .allowsHitTesting(false)
                     } else if let title = mochi.dropSuccessTitle {
                         HStack(spacing: 6) {
                             Image(systemName: "checkmark.circle.fill")
@@ -173,8 +212,9 @@ struct MochiStageView: View {
 
                     // Animated 3D robot head from fayazara/robot-heads (MIT License).
                     RobotHeadView(
-                        state: mochi.isDragOver ? .searching
-                            : (mochi.isHappy ? .happy : .idle),
+                        state: mochi.isError ? .error
+                            : (mochi.isDragOver ? .searching
+                            : (mochi.isHappy ? .happy : .idle)),
                         shape: .rectangle,
                         size: 140,
                         color: "#2563EB",
@@ -205,6 +245,10 @@ struct MochiStageView: View {
             if let title = note.userInfo?["title"] as? String {
                 mochi.reactToDrop(title: title)
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .notchDropFailed)) { note in
+            let reason = note.userInfo?["reason"] as? String ?? "Format berkas tidak didukung"
+            mochi.reactToError(reason: reason)
         }
     }
 
