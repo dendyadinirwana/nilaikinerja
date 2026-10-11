@@ -72,13 +72,13 @@ Didukung oleh engine grafis TV-headed 3D bot dari [`fayazara/robot-heads`](https
 ---
 
 ### 3. 📂 Smart File Drag & Drop
-Tarik berkas apa pun (PDF laporan, foto dokumentasi `.png`/`.jpg`, Word, Excel) langsung ke notch:
-- Notch otomatis langsung mekar ke mode Expanded seketika (tanpa jeda).
-- Form **Tambah Kegiatan** otomatis terisi:
-  - Judul kegiatan dibersihkan otomatis dari nama berkas (contoh: `Draf_Laporan_SIPPDT_2026.pdf` ➔ `Draf Laporan SIPPDT 2026`).
-  - Waktu default otomatis diatur 1 jam ke depan.
-  - Berkas otomatis terlampir sebagai bukti kinerja yang aman.
-- Robot merayakan berkas yang diterima dengan animasi gembira.
+Tarik berkas dokumen atau gambar apa pun (PDF, PowerPoint/PPTX/PPT/Keynote, Word/DOCX, Excel/XLSX, Text, atau Foto PNG/JPG/HEIC) langsung ke notch:
+- **Mode Pemindaian Cerdas (1.5s):** Robot beralih ke mode scanning dengan animasi sensor radar cyan dan status *"Memindai [Nama Berkas]..."*.
+- **Otomatisasi Form Kegiatan:** Setelah pemindaian selesai, form **Tambah Kegiatan** otomatis mekar meluncur dengan:
+  - Judul kegiatan dibersihkan otomatis dari nama berkas (contoh: `Draf_Paparan_PPDT_2026.pptx` ➔ `Draf Paparan PPDT 2026`).
+  - Waktu default otomatis diatur durasi 1 jam.
+  - Berkas otomatis terlampir dengan ikon format cerdas sebagai bukti kinerja.
+- **Validasi Format Ketat:** Format non-dokumen (seperti `.zip`, `.exe`, `.dmg`) langsung ditolak dengan ekspresi robot `.error` (mata merah `X X`, gelombang peringatan, dan alert suara).
 
 ---
 

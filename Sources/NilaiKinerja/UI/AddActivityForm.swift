@@ -441,9 +441,11 @@ struct AddActivityForm: View {
         let ext = URL(fileURLWithPath: filename).pathExtension.lowercased()
         switch ext {
         case "pdf": return "doc.richtext.fill"
-        case "docx", "doc": return "doc.text.fill"
-        case "xlsx", "xls", "csv": return "tablecells.fill"
-        case "png", "jpg", "jpeg", "heic", "webp", "gif", "svg": return "photo.fill"
+        case "docx", "doc", "odt", "pages", "rtf": return "doc.text.fill"
+        case "pptx", "ppt", "odp", "key": return "play.rectangle.fill"
+        case "xlsx", "xls", "csv", "ods", "numbers": return "tablecells.fill"
+        case "txt", "text", "md", "markdown": return "doc.plaintext.fill"
+        case "png", "jpg", "jpeg", "heic", "heif", "webp", "gif", "svg", "tiff", "bmp": return "photo.fill"
         default: return kind == .pdf ? "doc.richtext.fill" : (kind == .image ? "photo.fill" : "doc.fill")
         }
     }
@@ -557,12 +559,11 @@ struct AddActivityForm: View {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
-        var types: [UTType] = [.image, .pdf]
-        if let docx = UTType(filenameExtension: "docx") { types.append(docx) }
-        if let doc = UTType(filenameExtension: "doc") { types.append(doc) }
-        if let xlsx = UTType(filenameExtension: "xlsx") { types.append(xlsx) }
-        if let xls = UTType(filenameExtension: "xls") { types.append(xls) }
-        if let csv = UTType(filenameExtension: "csv") { types.append(csv) }
+        var types: [UTType] = [.image, .pdf, .text, .plainText]
+        let exts = ["docx", "doc", "rtf", "odt", "pages", "pptx", "ppt", "odp", "key", "xlsx", "xls", "csv", "ods", "numbers", "md"]
+        for ext in exts {
+            if let t = UTType(filenameExtension: ext) { types.append(t) }
+        }
         panel.allowedContentTypes = types
         panel.prompt = "Lampirkan"
         // Capture the draft directly: this is a value-type view, so there is
@@ -661,7 +662,7 @@ final class ActivityDraft: ObservableObject {
                 NotificationCenter.default.post(
                     name: .notchDropFailed,
                     object: nil,
-                    userInfo: ["reason": "Format .\(ext) tidak didukung (Hanya PDF, Word, Excel, Gambar)"]
+                    userInfo: ["reason": "Format .\(ext) tidak didukung (Hanya Dokumen & Gambar)"]
                 )
                 NSSound.beep()
                 continue

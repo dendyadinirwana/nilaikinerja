@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Handles drag-and-drop file ingestion directly onto Mochi or the notch capsule.
 ///
@@ -14,16 +15,32 @@ import SwiftUI
 ///      prefilled with the clean title, 1-hour time slot, and attached documents, while celebrating (.happy)!
 @MainActor
 enum MochiDropHandler {
-    /// Allowed formats: PDF, Word (docx/doc), Excel (xlsx/xls/csv), and Images.
+    /// Allowed formats: all standard documents (PDF, Word, PPT/Presentation, Excel/Spreadsheet, Text) and Images.
     static let supportedExtensions: Set<String> = [
+        // Documents
         "pdf",
-        "docx", "doc",
-        "xlsx", "xls", "csv",
-        "png", "jpg", "jpeg", "heic", "webp", "gif", "svg", "tiff", "bmp", "ico"
+        "docx", "doc", "rtf", "odt", "pages",
+        "pptx", "ppt", "odp", "key",
+        "xlsx", "xls", "csv", "ods", "numbers",
+        "txt", "text", "md", "markdown",
+        // Images
+        "png", "jpg", "jpeg", "heic", "heif", "webp", "gif", "svg", "tiff", "tif", "bmp", "ico"
     ]
 
     static func isSupported(url: URL) -> Bool {
-        supportedExtensions.contains(url.pathExtension.lowercased())
+        let ext = url.pathExtension.lowercased()
+        if supportedExtensions.contains(ext) { return true }
+        if let type = UTType(filenameExtension: ext) {
+            if type.conforms(to: .image) ||
+               type.conforms(to: .presentation) ||
+               type.conforms(to: .spreadsheet) ||
+               type.conforms(to: .text) ||
+               type.conforms(to: .pdf) ||
+               type.conforms(to: .compositeContent) {
+                return true
+            }
+        }
+        return false
     }
 
     @discardableResult
@@ -41,7 +58,7 @@ enum MochiDropHandler {
             let ext = unsupported.first?.pathExtension.isEmpty == false
                 ? unsupported.first!.pathExtension.uppercased()
                 : "FILE"
-            let errorReason = "Format .\(ext) tidak didukung (Hanya PDF, Word, Excel, Gambar)"
+            let errorReason = "Format .\(ext) tidak didukung (Hanya Dokumen & Gambar)"
 
             mode?.isHomeFormOpen = false
             withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {

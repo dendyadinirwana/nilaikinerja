@@ -295,8 +295,11 @@ enum SelfTest {
         // 3. Supported format checks & rejection of unsupported formats
         check("pdf is supported", MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/doc.pdf")))
         check("docx is supported", MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/doc.docx")))
+        check("pptx presentation is supported", MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/deck.pptx")))
+        check("ppt presentation is supported", MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/deck.ppt")))
         check("xlsx is supported", MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/sheet.xlsx")))
         check("png image is supported", MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/photo.png")))
+        check("txt document is supported", MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/notes.txt")))
         check("zip archive is not supported", !MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/archive.zip")))
         check("mp4 video is not supported", !MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/video.mp4")))
         check("exe binary is not supported", !MochiDropHandler.isSupported(url: URL(fileURLWithPath: "/tmp/setup.exe")))
