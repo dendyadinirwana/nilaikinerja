@@ -249,6 +249,24 @@ struct MochiStageView: View {
                 }
             }
         }
+        .background(
+            AttachmentDropView(
+                onHover: { hovering in
+                    NotificationCenter.default.post(
+                        name: .notchDragHoverChanged,
+                        object: nil,
+                        userInfo: ["isHovering": hovering]
+                    )
+                },
+                onDrop: { urls in
+                    NotificationCenter.default.post(
+                        name: .notchDroppedFiles,
+                        object: nil,
+                        userInfo: ["urls": urls]
+                    )
+                }
+            )
+        )
         .onReceive(NotificationCenter.default.publisher(for: .notchDragHoverChanged)) { note in
             let isHovering = note.userInfo?["isHovering"] as? Bool ?? false
             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {

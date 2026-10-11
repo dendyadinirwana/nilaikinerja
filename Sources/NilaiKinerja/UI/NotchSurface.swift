@@ -176,6 +176,28 @@ struct NotchSurface: View {
             .clipped()
         }
         .frame(width: targetSize.width, height: targetSize.height, alignment: .top)
+        .background(
+            Group {
+                if isExpanded {
+                    AttachmentDropView(
+                        onHover: { hovering in
+                            NotificationCenter.default.post(
+                                name: .notchDragHoverChanged,
+                                object: nil,
+                                userInfo: ["isHovering": hovering]
+                            )
+                        },
+                        onDrop: { urls in
+                            NotificationCenter.default.post(
+                                name: .notchDroppedFiles,
+                                object: nil,
+                                userInfo: ["urls": urls]
+                            )
+                        }
+                    )
+                }
+            }
+        )
         .animation(
             .spring(response: 0.44, dampingFraction: 0.78, blendDuration: 0.2),
             value: visualState

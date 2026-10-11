@@ -31,12 +31,12 @@ final class DropView: NSView {
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
-        registerForDraggedTypes([.fileURL])
+        registerForDraggedTypes([.fileURL, .init("NSFilenamesPboardType")])
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        registerForDraggedTypes([.fileURL])
+        registerForDraggedTypes([.fileURL, .init("NSFilenamesPboardType")])
     }
 
     /// Highlight the drop target while a drag is over it, so it is obvious
@@ -44,6 +44,7 @@ final class DropView: NSView {
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         let urls = Self.urls(from: sender)
         guard !urls.isEmpty else { return [] }
+        NSLog("[DropView] draggingEntered: \(urls.count) file(s)")
         onHover?(true)
         return .copy
     }
@@ -62,6 +63,7 @@ final class DropView: NSView {
         onHover?(false)
         let urls = Self.urls(from: sender)
         guard !urls.isEmpty else { return false }
+        NSLog("[DropView] performDragOperation accepted \(urls.count) file(s)")
         NotificationCenter.default.post(name: .notchFilesDelivered, object: nil)
         onDrop?(urls)
         return true
@@ -70,22 +72,27 @@ final class DropView: NSView {
     /// Accepts images and documents (PDF, Word, Excel, PowerPoint, Text, etc.).
     /// Filters out directories and ensures files exist on disk.
     static func urls(from sender: NSDraggingInfo) -> [URL] {
+        var result: [URL] = []
+        let pboard = sender.draggingPasteboard
         let options: [NSPasteboard.ReadingOptionKey: Any] = [
             .urlReadingFileURLsOnly: true
         ]
-        guard let urls = sender.draggingPasteboard.readObjects(
-            forClasses: [NSURL.self],
-            options: options
-        ) as? [URL] else { return [] }
-
-        return urls.filter { url in
-            guard url.isFileURL && !url.hasDirectoryPath else { return false }
-            // Accept any regular file or valid UTType
-            if let type = UTType(filenameExtension: url.pathExtension.lowercased()) {
-                if type.conforms(to: .item) || type.conforms(to: .content) || type.conforms(to: .data) {
-                    return true
+        if let urls = pboard.readObjects(forClasses: [NSURL.self], options: options) as? [URL] {
+            result.append(contentsOf: urls)
+        }
+        if result.isEmpty, let items = pboard.pasteboardItems {
+            for item in items {
+                if let str = item.string(forType: .fileURL), let u = URL(string: str) {
+                    result.append(u)
                 }
             }
+        }
+        if result.isEmpty, let filenames = pboard.propertyList(forType: .init("NSFilenamesPboardType")) as? [String] {
+            result.append(contentsOf: filenames.map { URL(fileURLWithPath: $0) })
+        }
+
+        return result.filter { url in
+            guard url.isFileURL && !url.hasDirectoryPath else { return false }
             return !url.pathExtension.isEmpty
         }
     }

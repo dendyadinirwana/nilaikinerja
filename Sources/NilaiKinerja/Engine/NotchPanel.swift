@@ -297,7 +297,7 @@ final class NotchWindowController: NSObject {
         }
         panel.contentView = hostingView
         panel.delegate = self
-        panel.registerForDraggedTypes([.fileURL])
+        panel.registerForDraggedTypes([.fileURL, .init("NSFilenamesPboardType")])
         // By default, ignore mouse events across the large canvas so all clicks
         // reach whatever application or desktop is underneath.
         panel.ignoresMouseEvents = true
