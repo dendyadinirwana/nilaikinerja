@@ -385,7 +385,7 @@ final class NotchWindowController: NSObject {
     /// the hover monitors cannot notice it; this poll reads the pressed-button
     /// mask instead and hands input back to the panel while a drag is over it.
     private func startDragWatch() {
-        let timer = Timer(timeInterval: 0.06, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.025, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.pollForDrag() }
         }
         RunLoop.main.add(timer, forMode: .common)
