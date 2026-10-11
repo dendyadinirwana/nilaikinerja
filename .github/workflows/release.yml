@@ -1,0 +1,41 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build macOS Release Bundle
+    runs-on: macos-14
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer || true
+
+      - name: Compile Release Application
+        run: |
+          chmod +x build.sh
+          ./build.sh release
+
+      - name: Package Distribution Zip
+        run: |
+          cd dist
+          zip -r -y NilaiKinerja.zip NilaiKinerja.app
+          ls -lh NilaiKinerja.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/NilaiKinerja.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
