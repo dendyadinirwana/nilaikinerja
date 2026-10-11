@@ -1,7 +1,7 @@
 <h1 align="center">NilaiKinerja</h1>
 
 <p align="center">
-  <strong>Aplikasi pencatatan kinerja harian ASN berbasis hardware notch MacBook dengan maskot 3D interaktif dan Asisten AI lokal.</strong>
+  <strong>Aplikasi pencatatan kinerja harian ASN berbasis hardware notch MacBook dengan maskot 3D interaktif, inspeksi berkas cerdas, dan Asisten AI lokal.</strong>
 </p>
 
 <p align="center">
@@ -63,22 +63,27 @@ Didukung oleh engine grafis TV-headed 3D bot dari [`fayazara/robot-heads`](https
   - `idle`: Mata santai melirik dan berkedip, antena putih lembut.
   - `working`: Mata fokus menatap ke bawah dengan animasi progress bar LED.
   - `thinking`: Kepala menengadah dengan titik loading berdenyut, antena kuning/amber (aktif saat AI menyusun respons).
-  - `searching`: Sinar pemindai cyan menyapu layar bolak-balik (aktif saat file melayang di atas notch).
+  - `searching`: Sinar pemindai cyan menyapu layar bolak-balik (aktif saat berkas dipindai di atas notch).
   - `happy`: Mata tersenyum `^ ^` dengan mulut pixel melengkung (aktif saat tugas berhasil disimpan).
-  - `error`: Mata merah `X X` dengan gelombang peringatan (aktif saat validasi gagal).
+  - `error`: Mata merah `X X` dengan gelombang peringatan (aktif saat validasi biner berkas gagal).
   - `speaking`: Mulut pixel bergerak naik turun berbicara (aktif saat streaming jawaban AI).
   - `sleeping`: Mata terpejam dengan huruf `Z Z` melayang (aktif di luar jam kerja).
 
 ---
 
-### 3. 📂 Smart File Drag & Drop
-Tarik berkas dokumen atau gambar apa pun (PDF, PowerPoint/PPTX/PPT/Keynote, Word/DOCX, Excel/XLSX, Text, atau Foto PNG/JPG/HEIC) langsung ke notch:
-- **Mode Pemindaian Cerdas (1.5s):** Robot beralih ke mode scanning dengan animasi sensor radar cyan dan status *"Memindai [Nama Berkas]..."*.
-- **Otomatisasi Form Kegiatan:** Setelah pemindaian selesai, form **Tambah Kegiatan** otomatis mekar meluncur dengan:
-  - Judul kegiatan dibersihkan otomatis dari nama berkas (contoh: `Draf_Paparan_PPDT_2026.pptx` ➔ `Draf Paparan PPDT 2026`).
+### 3. 📂 Smart File Drag & Drop & Deep Magic-Byte Validator
+Tarik berkas dokumen kerja atau gambar apa pun langsung ke notch untuk mencatat kegiatan secara otomatis:
+- **Kalibrasi Proksimitas Notch:** Saat aplikasi dalam posisi Idle, notch tidak akan mekar sembarangan saat drag biasa di desktop atau Finder. Notch hanya akan terbangun ketika berkas benar-benar dibawa mendekati bibir notch.
+- **Stabilitas Tahan Berkas (*Zero Rush*):** Begitu mekar, panel tetap stabil terbuka tanpa rasa terburu-buru. Lo bebas menahan berkas di atas notch selama mungkin dan menjatuhkannya di mana saja di area kartu 640pt.
+- **Inspeksi Biner & Anti-Spoofing (`FileContentValidator`):**
+  - Bukan sekadar memeriksa ekstensi nama file, melainkan membedah *Magic Bytes* (header biner berkas hingga 8 KB).
+  - Menolak otomatis berkas executable atau malware terselubung (Windows `MZ`/PE, Linux `ELF`, macOS `Mach-O`, shell scripts `#!`).
+  - Memverifikasi keaslian paket zip OpenXML untuk dokumen Office modern (memastikan DOCX memuat `word/`, PPTX memuat `ppt/`, XLSX memuat `xl/`).
+- **Mode Auto-Scanning (1.5s):** Robot Head memindai berkas secara visual dengan status *"Memindai & Memverifikasi [Nama Berkas]..."* sebelum formulir mekar.
+- **Otomatisasi Form Kegiatan:** Setelah lolos verifikasi, formulir kegiatan meluncur otomatis:
+  - Judul kegiatan dibersihkan otomatis (contoh: `Draf_Paparan_PPDT_2026.pptx` ➔ `Draf Paparan PPDT 2026`).
   - Waktu default otomatis diatur durasi 1 jam.
-  - Berkas otomatis terlampir dengan ikon format cerdas sebagai bukti kinerja.
-- **Validasi Format Ketat:** Format non-dokumen (seperti `.zip`, `.exe`, `.dmg`) langsung ditolak dengan ekspresi robot `.error` (mata merah `X X`, gelombang peringatan, dan alert suara).
+  - Berkas otomatis terlampir dengan ikon format cerdas (Presentasi, Word, Excel, PDF, Teks, Foto).
 
 ---
 
@@ -95,7 +100,16 @@ Terbagi rapi dalam 4 tab dengan animasi sliding pill tanpa border stroke yang me
 - **Notch & Interaksi:** Pengaturan toggle glow, intensitas cahaya (20%–100%), dwell timer (0.3s–2.0s), ukuran kapsul, lebar panel, dan auto-collapse delay.
 - **Asisten AI:** Konfigurasi endpoint Base URL, API Key opsional, dan tombol refresh daftar model.
 - **Kinerja & Berkas:** Jam kerja ASN, hari kerja aktif, pengingat checkpoint berkala (15m–90m), suara notifikasi, dan pemilih folder penyimpanan lampiran.
-- **Tentang:** Status versi, lisensi MIT, tautan repository, tombol **"Periksa Pembaruan"** (*Check for Updates*), dan toggle **Pembaruan Otomatis**.
+- **Tentang:** Status versi aktif, lisensi MIT, tautan repository, status izin sistem macOS, tombol **"Periksa Pembaruan"** (*Check for Updates* OTA via GitHub Releases), dan toggle **Pembaruan Otomatis**.
+
+---
+
+### 6. 🔒 Izin Akses Sistem macOS (Onboarding Otomatis)
+Aplikasi secara otomatis memicu dialog izin resmi macOS pada peluncuran pertama:
+1. **Accessibility (Aksesibilitas):** Diperlukan agar kursor mouse dapat dipantau saat melintasi notch dan menerima gesture drag-and-drop dari Finder.
+2. **User Notifications (Pemberitahuan Sistem):** Diperlukan untuk pengingat checkpoint berkala dan alarm tugas harian.
+
+Status izin ini dapat dipantau dan dikelola kapan saja melalui menu **Pengaturan ➔ Tab Tentang ➔ Izin & Akses Sistem macOS**.
 
 ---
 
@@ -137,7 +151,7 @@ Aplikasi dapat di-build langsung tanpa membuka Xcode IDE:
 git clone https://github.com/dendyadinirwana/nilaikinerja.git
 cd nilaikinerja
 
-# Kompilasi versi release & uji otomatis (185 checks)
+# Kompilasi versi release & uji otomatis (215 checks)
 ./build.sh release
 ./dist/NilaiKinerja.app/Contents/MacOS/NilaiKinerja --selftest
 
@@ -153,24 +167,15 @@ open /Applications/NilaiKinerja.app
 
 ---
 
-## 🔒 Izin Akses macOS (Wajib)
-
-Agar aplikasi dapat mendeteksi kursor kursor saat melintasi notch dan menerima gesture drag-and-drop dari Finder:
-1. Buka **System Settings** (Pengaturan Sistem) ➔ **Privacy & Security** (Privasi & Keamanan).
-2. Pilih menu **Accessibility** (Aksesibilitas).
-3. Aktifkan sakelar untuk **Nilai Kinerja**.  
-   *(Jika belum ada di daftar, klik tombol `+` lalu pilih `NilaiKinerja.app` dari folder `/Applications`).*
-
----
-
 ## 🛠️ Arsitektur & Teknologi
 
 - **Bahasa:** Swift 5.9+ (SwiftUI & AppKit native).
 - **Notch Engine:** Kustom `NSPanel` di level `.statusBar` dengan canvas morphing berbasis spring physics tanpa kedip.
-- **Karakter 3D:** Engine Canvas 2D murni (`robot-heads-vanilla.js`) berukuran 33 KB, dihosting secara ringan via `WKWebView` non-blocking.
+- **Karakter 3D:** Engine Canvas 2D murni (`robot-heads-vanilla.js`) berukuran 33 KB, dihosting secara ringan via `WKWebView` non-blocking (100% MIT License).
+- **Validasi Berkas:** Inspeksi biner mendalam (*magic byte sniffing*) untuk dokumen & gambar (`FileContentValidator`).
 - **Database:** SQLite native lokal (`sqlite3`) dengan migrasi otomatis.
 - **Ekspor Dokumen:** Generator format laporan resmi Microsoft Word (`.docx`) native tanpa library pihak ketiga.
-- **Pengujian:** Headless test suite mandiri (`--selftest` & `--selftest-ai`) dengan 185 pengujian terverifikasi.
+- **Pengujian:** Headless test suite mandiri (`--selftest` & `--selftest-ai`) dengan 215 pengujian terverifikasi.
 
 ---
 
