@@ -57,7 +57,7 @@ enum NotchGeometry {
 
     /// Dedicated heights for specific screens so the panel hugs its content
     /// exactly without clipping or dead void space.
-    static let homeHeight: CGFloat = 160
+    static let homeHeight: CGFloat = 250
     static let homeWithFormHeight: CGFloat = 645
     static let emptyListHeight: CGFloat = 255
     static let addFormHeight: CGFloat = 520

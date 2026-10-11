@@ -120,9 +120,9 @@ struct MochiStageView: View {
                                 )
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding(.horizontal, 10)
-                        .padding(.top, 2)
-                        .padding(.bottom, 8)
+                        .padding(.horizontal, 12)
+                        .padding(.top, 4)
+                        .padding(.bottom, 12)
 
                     // Soft ambient radial glow / halo behind Mochi centered at (cx, cy)
                     RadialGradient(
@@ -133,9 +133,9 @@ struct MochiStageView: View {
                         ],
                         center: .center,
                         startRadius: 0,
-                        endRadius: mochi.isDragOver ? 115 : 85
+                        endRadius: mochi.isDragOver ? 125 : 95
                     )
-                    .frame(width: mochi.isDragOver ? 230 : 170, height: mochi.isDragOver ? 230 : 170)
+                    .frame(width: mochi.isDragOver ? 250 : 190, height: mochi.isDragOver ? 250 : 190)
                     .position(x: cx, y: cy)
                     .allowsHitTesting(false)
 
@@ -152,7 +152,7 @@ struct MochiStageView: View {
                         .padding(.vertical, 6)
                         .background(Capsule().fill(Color(hex: 0x2563EB)))
                         .shadow(color: Color(hex: 0x2563EB).opacity(0.5), radius: 8, y: 3)
-                        .position(x: cx, y: cy - 72)
+                        .position(x: cx, y: cy - 78)
                         .allowsHitTesting(false)
                     } else if let title = mochi.dropSuccessTitle {
                         HStack(spacing: 6) {
@@ -167,7 +167,7 @@ struct MochiStageView: View {
                         .padding(.vertical, 5)
                         .background(Capsule().fill(Color(hex: 0x059669)))
                         .shadow(color: Color(hex: 0x059669).opacity(0.4), radius: 8, y: 3)
-                        .position(x: cx, y: cy - 72)
+                        .position(x: cx, y: cy - 78)
                         .allowsHitTesting(false)
                     }
 
@@ -176,16 +176,17 @@ struct MochiStageView: View {
                         state: mochi.isDragOver ? .searching
                             : (mochi.isHappy ? .happy : .idle),
                         shape: .rectangle,
-                        size: 130,
+                        size: 140,
                         color: "#2563EB",
                         trimColor: "#93A6C8",
                         screenColor: "#E8F2FF",
                         antenna: true,
                         floorShadow: true,
                         speed: 1.0,
-                        pokeTrigger: mochi.pokeTrigger
+                        pokeTrigger: mochi.pokeTrigger,
+                        tracksCursor: true
                     )
-                    .frame(width: 130, height: 130)
+                    .frame(width: 140, height: 140)
                     .position(x: cx, y: cy)
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -449,7 +450,8 @@ struct MochiAnimatedHeroView: View {
                             trimColor: "#93A6C8",
                             screenColor: "#E8F2FF",
                             antenna: true,
-                            floorShadow: false
+                            floorShadow: false,
+                            tracksCursor: true
                         )
                     }
                 }

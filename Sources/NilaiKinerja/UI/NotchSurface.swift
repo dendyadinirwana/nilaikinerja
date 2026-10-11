@@ -226,17 +226,17 @@ struct NotchSurface: View {
     /// on the far edge for a time, the way a menu bar does.
     private var collapsedContent: some View {
         HStack(spacing: 0) {
-            // The real Living Icon sprite, not the procedural stand-in. This
-            // capsule is the most-looked-at surface in the app, so it gets the
-            // actual animated character.
+            // Mini 3D TV robot head inside the collapsed capsule.
             LiveCharacterView(
                 emotion: "",
                 pack: liveIcon,
-                pointSize: 20,
+                pointSize: 22,
                 voice: .idle,
                 moodOverride: today.isWorkingNow ? .excited : .calm
             )
-                .frame(width: 28, height: 20)
+            .padding(.leading, 14)
+            .padding(.top, 5)
+            .padding(.bottom, 5)
 
             Spacer(minLength: 8)
 
@@ -394,7 +394,7 @@ struct NotchSurface: View {
                 // Companion speech / drop notification card
                 VStack(alignment: .leading, spacing: 5) {
                     HStack {
-                        Text("Berkas Diterima Mochi")
+                        Text("Berkas Diterima")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(.white)
 

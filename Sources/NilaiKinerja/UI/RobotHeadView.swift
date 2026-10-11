@@ -39,6 +39,7 @@ struct RobotHeadView: NSViewRepresentable {
     var floorShadow: Bool = true
     var speed: Double = 1.0
     var pokeTrigger: Int = 0
+    var tracksCursor: Bool = false
 
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
@@ -57,6 +58,12 @@ struct RobotHeadView: NSViewRepresentable {
     }
 
     func updateNSView(_ webView: WKWebView, context: Context) {
+        if tracksCursor {
+            context.coordinator.startTracking(webView: webView)
+        } else {
+            context.coordinator.stopTracking()
+        }
+
         if context.coordinator.lastState != state {
             context.coordinator.lastState = state
             call(webView, "window.robotBridge && window.robotBridge.setState('\(state.rawValue)')")
@@ -106,5 +113,52 @@ struct RobotHeadView: NSViewRepresentable {
         var lastState: RobotHeadState?
         var lastShape: RobotHeadShape?
         var lastPokeTrigger: Int = 0
+        weak var webView: WKWebView?
+        private var localMonitor: Any?
+        private var globalMonitor: Any?
+        private var lastUpdate: TimeInterval = 0
+
+        func startTracking(webView: WKWebView) {
+            self.webView = webView
+            guard localMonitor == nil else { return }
+
+            let onMove: (NSPoint) -> Void = { [weak self, weak webView] screenPoint in
+                guard let self, let webView, let window = webView.window, window.isVisible else { return }
+                let now = CACurrentMediaTime()
+                guard now - self.lastUpdate >= 0.025 else { return } // 40 FPS throttle
+                self.lastUpdate = now
+
+                let mouseInWindow = window.convertPoint(fromScreen: screenPoint)
+                let mouseInView = webView.convert(mouseInWindow, from: nil)
+                let centerX = webView.bounds.midX
+                let centerY = webView.bounds.midY
+                let dx = mouseInView.x - centerX
+                // AppKit has Y=0 at bottom, Web has Y=0 at top
+                let dy = -(mouseInView.y - centerY)
+
+                if hypot(dx, dy) < 800 {
+                    webView.evaluateJavaScript("window.robotBridge && window.robotBridge.setPointer(\(Int(dx)), \(Int(dy)))") { _, _ in }
+                } else {
+                    webView.evaluateJavaScript("window.robotBridge && window.robotBridge.setPointer(null, null)") { _, _ in }
+                }
+            }
+
+            localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .mouseEntered, .leftMouseDragged]) { event in
+                onMove(NSEvent.mouseLocation)
+                return event
+            }
+            globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { _ in
+                onMove(NSEvent.mouseLocation)
+            }
+        }
+
+        func stopTracking() {
+            if let m = localMonitor { NSEvent.removeMonitor(m); localMonitor = nil }
+            if let m = globalMonitor { NSEvent.removeMonitor(m); globalMonitor = nil }
+        }
+
+        deinit {
+            stopTracking()
+        }
     }
 }

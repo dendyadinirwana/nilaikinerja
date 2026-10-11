@@ -162,6 +162,6 @@ struct LiveCharacterView: View {
             antenna: false,
             floorShadow: false
         )
-        .frame(width: pointSize, height: pointSize)
+        .frame(width: pointSize * 1.3, height: pointSize)
     }
 }
