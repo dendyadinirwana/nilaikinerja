@@ -197,21 +197,12 @@ enum NotchGeometry {
         CGSize(width: expandedWidth, height: settingsHeight)
     }
 
-    /// Generous awareness zone for incoming drag-and-drop items.
+    /// Awareness zone around the idle notch capsule.
     ///
-    /// Even when the panel is completely collapsed or only in idle hover, this
-    /// covers the full prospective dropdown geometry plus a generous approach funnel:
-    /// - Width: 800pt centered on the display (covering the full 640pt dropdown + margins).
-    /// - Height: from 480pt below the screen top all the way up past the notch lip.
-    ///
-    /// This ensures dragging files towards the notch blooms open instantly without
-    /// requiring the user to squeeze their cursor into an impossibly tiny slit at the display edge.
+    /// Calibrated to the immediate proximity of the idle notch so drags elsewhere
+    /// on the desktop, Finder, or browser windows never accidentally trigger the panel.
+    /// The notch only awakens when a dragged file approaches right near the notch lip.
     static func dropZone(on screen: NSScreen, collapsed: CGSize) -> NSRect {
-        let width: CGFloat = max(expandedWidth + 160, 800)
-        let x = floor(screen.frame.midX - width / 2)
-        let topY = screen.frame.maxY + 46
-        let bottomY = screen.frame.maxY - 480
-        let height = topY - bottomY
-        return NSRect(x: x, y: bottomY, width: width, height: height)
+        presentedFrame(on: screen, size: collapsed).insetBy(dx: -60, dy: -36)
     }
 }

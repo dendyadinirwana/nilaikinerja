@@ -455,12 +455,10 @@ final class NotchWindowController: NSObject {
         let collapsedZone = NotchGeometry.dropZone(on: metrics.screen, collapsed: metrics.collapsed)
         let activeZone: NSRect
         if dragHoldingOpen || presentedExpanded {
-            let width: CGFloat = max(metrics.screen.frame.width * 0.75, 1000)
-            let x = floor(metrics.screen.frame.midX - width / 2)
-            let topY = metrics.screen.frame.maxY + 50
-            let bottomY = metrics.screen.frame.maxY - 720
-            activeZone = NSRect(x: x, y: bottomY, width: width, height: topY - bottomY)
+            // Once expanded, the active zone comfortably encompasses the presented card frame
+            activeZone = interactiveRect.insetBy(dx: -35, dy: -30)
         } else {
+            // While idle, only the immediate proximity around the notch triggers awareness
             activeZone = collapsedZone
         }
         let decision = dragDecision(
@@ -490,15 +488,15 @@ final class NotchWindowController: NSObject {
             endDragHold()
 
         case .leaveZone:
-            // Do NOT snap shut immediately! Give the user a generous grace period (1.5s)
-            // so hovering around controls or hesitating never folds the panel mid-drag.
+            // Give a gentle grace period (0.45s) so micro-adjustments don't flicker,
+            // but dragging away back to desktop collapses cleanly.
             if leaveZoneWorkItem == nil {
                 let work = DispatchWorkItem { [weak self] in
                     self?.leaveZoneWorkItem = nil
                     self?.endDragHold()
                 }
                 leaveZoneWorkItem = work
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: work)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45, execute: work)
             }
 
         case .enterZone, .holdOpen:
