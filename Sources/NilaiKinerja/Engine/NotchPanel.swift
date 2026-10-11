@@ -13,29 +13,21 @@ final class NotchPanel: NSPanel {
 @MainActor
 final class NotchHostingView<Content: View>: NSHostingView<Content> {
     var isPointInteractive: ((NSPoint) -> Bool)?
-
-    /// True while the panel is armed as a drop destination for an in-flight
-    /// drag. This is what makes the drag actually reach us.
-    ///
-    /// AppKit has no "drag region" concept: it routes a drag session to the view
-    /// that `hitTest` returns under the pointer. This view implements
-    /// click-through by returning `nil` outside the interactive rect, so with
-    /// the panel collapsed `hitTest` returned `nil` and AppKit found no
-    /// destination in our window at all — it walked straight down to the Finder
-    /// Desktop, which is why the file kept landing there even though the panel
-    /// was armed and visibly expanded (log: 23 arm events, 7 zone entries,
-    /// zero `performDragOperation`).
-    ///
-    /// During a drag there are no clicks to pass through, so the gate is
-    /// bypassed and this view answers for itself. It is the registered
-    /// destination, so the drag lands here instead of the Desktop.
     var isDragArmed = false
 
     var onDragHover: ((Bool) -> Void)?
     var onDropURLs: (([URL]) -> Void)?
-    /// Tells the controller this drag really delivered files, so it does not
-    /// treat the release as a cancellation.
     var onDropDelivered: (() -> Void)?
+
+    @MainActor required dynamic init(rootView: Content) {
+        super.init(rootView: rootView)
+        registerForDraggedTypes([.fileURL, .init("NSFilenamesPboardType")])
+    }
+
+    @MainActor required dynamic init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        registerForDraggedTypes([.fileURL, .init("NSFilenamesPboardType")])
+    }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
         // While a drag is in flight, if a specific drop destination (like a
@@ -65,29 +57,33 @@ final class NotchHostingView<Content: View>: NSHostingView<Content> {
     }
 
     private static func fileURLs(from sender: NSDraggingInfo) -> [URL] {
+        var result: [URL] = []
+        let pboard = sender.draggingPasteboard
         let options: [NSPasteboard.ReadingOptionKey: Any] = [
             .urlReadingFileURLsOnly: true
         ]
-        guard let objects = sender.draggingPasteboard.readObjects(
-            forClasses: [NSURL.self],
-            options: options
-        ) else { return [] }
-        let urls = objects.compactMap { $0 as? URL }
-        // Directories are ignored: dropping a folder attaches nothing the user
-        // can review against an activity record.
-        return urls.filter { $0.isFileURL && !$0.hasDirectoryPath }
+        if let objects = pboard.readObjects(forClasses: [NSURL.self], options: options) as? [URL] {
+            result.append(contentsOf: objects)
+        }
+        if result.isEmpty, let items = pboard.pasteboardItems {
+            for item in items {
+                if let str = item.string(forType: .fileURL), let u = URL(string: str) {
+                    result.append(u)
+                }
+            }
+        }
+        if result.isEmpty, let filenames = pboard.propertyList(forType: .init("NSFilenamesPboardType")) as? [String] {
+            result.append(contentsOf: filenames.map { URL(fileURLWithPath: $0) })
+        }
+        return result.filter { $0.isFileURL && !$0.hasDirectoryPath }
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        let urls = Self.fileURLs(from: sender)
-        guard !urls.isEmpty else { return [] }
         onDragHover?(true)
         return .copy
     }
 
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        let urls = Self.fileURLs(from: sender)
-        guard !urls.isEmpty else { return [] }
         onDragHover?(true)
         return .copy
     }
@@ -97,14 +93,14 @@ final class NotchHostingView<Content: View>: NSHostingView<Content> {
     }
 
     override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        !Self.fileURLs(from: sender).isEmpty
+        true
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         onDragHover?(false)
         let urls = Self.fileURLs(from: sender)
         guard !urls.isEmpty else {
-            NSLog("[Drag] performDragOperation — no file URLs on the pasteboard")
+            NSLog("[Drag] performDragOperation — no file URLs on pasteboard")
             return false
         }
         NSLog("[Drag] performDragOperation — accepted \(urls.count) file(s): \(urls.map { $0.lastPathComponent }.joined(separator: ", "))")
@@ -449,13 +445,16 @@ final class NotchWindowController: NSObject {
     private func pollForDrag() {
         guard let metrics else { return }
         let leftDown = NSEvent.pressedMouseButtons & leftMouseButtonMask != 0
-        let zone = NotchGeometry.dropZone(on: metrics.screen, collapsed: metrics.collapsed)
+        let collapsedZone = NotchGeometry.dropZone(on: metrics.screen, collapsed: metrics.collapsed)
+        let activeZone = (dragHoldingOpen || presentedExpanded)
+            ? collapsedZone.union(interactiveRect.insetBy(dx: -40, dy: -40))
+            : collapsedZone
         let decision = dragDecision(
             leftDown: leftDown,
             wasDown: dragButtonWasDown,
             holdingOpen: dragHoldingOpen,
             location: NSEvent.mouseLocation,
-            zone: zone
+            zone: activeZone
         )
         dragButtonWasDown = leftDown
 
@@ -464,11 +463,8 @@ final class NotchWindowController: NSObject {
             break
 
         case .dragBegan:
-            // Become a candidate drag destination immediately, while the file
-            // is still somewhere else on screen. No clicks can land during a
-            // drag, so holding the window interactive here costs nothing, and
-            // the click-through is restored in `.dragEnded`.
             dragArmed = true
+            mirrorDragArmed?(true)
             if panel?.ignoresMouseEvents == true {
                 panel?.ignoresMouseEvents = false
             }
@@ -481,6 +477,8 @@ final class NotchWindowController: NSObject {
             endDragHold()
 
         case .enterZone, .holdOpen:
+            dragArmed = true
+            mirrorDragArmed?(true)
             if panel?.ignoresMouseEvents == true {
                 panel?.ignoresMouseEvents = false
             }
@@ -501,26 +499,23 @@ final class NotchWindowController: NSObject {
     private func endDragHold() {
         let wasOpen = dragHoldingOpen
         dragHoldingOpen = false
-        dragArmed = false
-        mirrorDragArmed?(false)
-        let delivered = dragDeliveredFiles
-        dragDeliveredFiles = false
-        NKLog("[Drag] released — wasOpen=\(wasOpen) delivered=\(delivered) mouseInsideRect=\(NSMouseInRect(NSEvent.mouseLocation, interactiveRect, false))")
-        if wasOpen { onDragHover?(false) }
-        // A drag that ended without files was cancelled. It may still have
-        // pinned the panel on its way through `MochiDropHandler` (the SwiftUI
-        // drop views run independently of the AppKit one), and a pin has no
-        // automatic release — which left the panel open forever and made the
-        // hover-close setting stop applying. Cancel means "undo it".
-        if !delivered {
-            onDragCancelled?()
-        }
-        // The hover monitors were silent for the whole drag, so nothing else
-        // will re-evaluate the pointer. If it is outside the interactive rect,
-        // put click-through back now rather than leaving a click-eating panel
-        // sitting over the notch until the user happens to move the mouse.
-        if !NSMouseInRect(NSEvent.mouseLocation, interactiveRect, false) {
-            panel?.ignoresMouseEvents = true
+
+        // Delay disarming by 350ms so AppKit's dragging manager can invoke
+        // performDragOperation before the window ignores mouse events.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+            guard let self else { return }
+            self.dragArmed = false
+            self.mirrorDragArmed?(false)
+            let delivered = self.dragDeliveredFiles
+            self.dragDeliveredFiles = false
+            NKLog("[Drag] endDragHold finalized — wasOpen=\(wasOpen) delivered=\(delivered) mouseInsideRect=\(NSMouseInRect(NSEvent.mouseLocation, self.interactiveRect, false))")
+            if wasOpen { self.onDragHover?(false) }
+            if !delivered {
+                self.onDragCancelled?()
+            }
+            if !NSMouseInRect(NSEvent.mouseLocation, self.interactiveRect, false) {
+                self.panel?.ignoresMouseEvents = true
+            }
         }
     }
 
