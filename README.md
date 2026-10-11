@@ -26,7 +26,7 @@
 
 ## ✨ Fitur Unggulan
 
-### 1. 🎛️ Interaksi 3-State Notch (MacBook M4 Native)
+### 1. 🎛️ Interaksi 3-State Notch
 Antarmuka notch beradaptasi secara cerdas dalam 3 tahap interaksi cairan (*liquid spring transitions*):
 
 ```mermaid
