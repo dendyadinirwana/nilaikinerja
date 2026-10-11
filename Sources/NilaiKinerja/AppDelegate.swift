@@ -239,11 +239,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func runDiagnostics() {
-        if CommandLine.arguments.contains("--spritedump") {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                self.dumpSpritePlayback()
-            }
-        }
         if CommandLine.arguments.contains("--hitdump") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
                 self.dumpHitTest()
@@ -257,47 +252,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Drives a real `APNGPlaybackView` and logs the frame index over time.
-    ///
-    /// A pack that decodes but never steps looks identical to a working one in
-    /// a still image, so this reports the numbers that actually distinguish
-    /// them: total frames, frames advanced, and repaints.
-    private func dumpSpritePlayback() {
-        let pack = bridge.liveIcon
-        let combos = pack.allCombos()
-        NSLog("[Sprite] decoded combos: \(combos.count) — \(pack.loadReport)")
-
-        guard let (voice, mood) = combos.first,
-              let frames = pack.sprite(voice: voice, mood: mood) else {
-            NSLog("[Sprite] FAIL — nothing decoded")
-            return
-        }
-        NSLog("[Sprite] testing \(voice.rawValue)/\(mood.rawValue): frames=\(frames.count) loop=\(String(format: "%.2fs", frames.loopDuration))s")
-
-        let view = APNGPlaybackView(frame: NSRect(x: 0, y: 0, width: 120, height: 120))
-        view.setFrames(frames)
-        view.start()
-
-        let samples = 8
-        for step in 1...samples {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(step) * 0.15) {
-                NSLog("[Sprite] t=\(String(format: "%.2fs", Double(step) * 0.15)) frame=\(view.currentFrameIndex) repaints=\(view.repaintCount)")
-            }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double(samples) * 0.15 + 0.2) {
-            view.stop()
-            // Judge on the index, not the repaint count: this probe view is
-            // deliberately never added to a window, so AppKit never calls draw
-            // and repaints stays 0 even when the clock is stepping correctly.
-            // A view that advanced past frame 0 is animating; one still on 0 is
-            // the frame-zero failure this whole diagnostic exists to catch.
-            let advanced = view.currentFrameIndex > 0
-            let expected = max(1, Int(frames.loopDuration / frames.delays[0]))
-            NSLog("[Sprite] VERDICT: \(advanced ? "ANIMATING" : "STUCK ON FRAME 0")"
-                + " — advanced to frame \(view.currentFrameIndex)/\(frames.count)"
-                + " (~frame \(expected) expected at this point in the loop, repaints=\(view.repaintCount) offscreen)")
-        }
-    }
 
     /// Logs whether each header button centre actually resolves to a hit-testable
     /// view. A nil result here is the exact symptom of "the button is visible

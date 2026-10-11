@@ -36,9 +36,7 @@ rm -rf "$APP_PATH"
 mkdir -p "$APP_PATH/Contents/MacOS" "$APP_PATH/Contents/Resources"
 cp "$BIN_PATH/$APP_NAME" "$APP_PATH/Contents/MacOS/$APP_NAME"
 
-# Resources: the character page plus the Mood Mates engine it loads. The
-# HTML references `mood-mates/...` by relative path, so the directory layout
-# has to survive into the bundle.
+# Resources: 3D Robot Head engine, HTML wrapper, and AppIcon.
 if [[ -d "$ROOT_DIR/Resources" ]]; then
   cp -R "$ROOT_DIR/Resources/." "$APP_PATH/Contents/Resources/"
 fi
@@ -60,7 +58,7 @@ cat > "$APP_PATH/Contents/Info.plist" <<PLIST
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>
-  <key>NSHumanReadableCopyright</key><string>Local only. No network access.</string>
+  <key>NSHumanReadableCopyright</key><string>Hak Cipta © 2026 nirwna. MIT License.</string>
 </dict>
 </plist>
 PLIST

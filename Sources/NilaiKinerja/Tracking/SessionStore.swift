@@ -161,7 +161,6 @@ final class SessionStore: ObservableObject {
         return currentID
     }
 
-    @discardableResult
     func endSession(cause: WorkSession.EndCause, at date: Date = Date()) {
         guard let id = active?.id else { return }
         let now = date.timeIntervalSince1970

@@ -283,10 +283,11 @@ final class NotchWindowController: NSObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.noteDragDeliveredFiles()
+            Task { @MainActor in
+                self?.noteDragDeliveredFiles()
+            }
         }
-        hostingView.onDropURLs = { [weak self] urls in
-            guard let self else { return }
+        hostingView.onDropURLs = { urls in
             NotificationCenter.default.post(
                 name: .notchDroppedFiles,
                 object: nil,

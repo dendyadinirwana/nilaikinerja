@@ -437,9 +437,20 @@ struct AddActivityForm: View {
         .background(AttachmentDropView { urls in draft.add(urls) })
     }
 
+    private func iconName(for filename: String, kind: NilaiKinerja.Attachment.Kind) -> String {
+        let ext = URL(fileURLWithPath: filename).pathExtension.lowercased()
+        switch ext {
+        case "pdf": return "doc.richtext.fill"
+        case "docx", "doc": return "doc.text.fill"
+        case "xlsx", "xls", "csv": return "tablecells.fill"
+        case "png", "jpg", "jpeg", "heic", "webp", "gif", "svg": return "photo.fill"
+        default: return kind == .pdf ? "doc.richtext.fill" : (kind == .image ? "photo.fill" : "doc.fill")
+        }
+    }
+
     private func chip(_ item: ActivityDraft.Attachment) -> some View {
         HStack(spacing: 5) {
-            Image(systemName: item.kind == .pdf ? "doc.richtext.fill" : "photo.fill")
+            Image(systemName: iconName(for: item.filename, kind: item.kind))
                 .font(.system(size: 11))
             Text(item.filename)
                 .font(.system(size: 12, weight: .medium))

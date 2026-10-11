@@ -158,7 +158,6 @@ final class Database {
     }
 
     /// Steps through a statement, invoking `body` once per row.
-    @discardableResult
     func eachRow(_ sql: String, _ body: (OpaquePointer) -> Void) {
         query(sql) { statement in
             while sqlite3_step(statement) == SQLITE_ROW {

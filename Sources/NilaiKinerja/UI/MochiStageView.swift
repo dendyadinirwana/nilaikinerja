@@ -71,7 +71,6 @@ struct MochiStageView: View {
     @ObservedObject var settings: AppSettings
     var coordinator: TrackingCoordinator? = nil
     var mode: PanelMode? = nil
-    var liveIcon: LiveIconPack? = nil
     let onNavigateToTasks: () -> Void
     let onNavigateToChat: () -> Void
 
@@ -81,14 +80,12 @@ struct MochiStageView: View {
         settings: AppSettings,
         coordinator: TrackingCoordinator? = nil,
         mode: PanelMode? = nil,
-        liveIcon: LiveIconPack? = nil,
         onNavigateToTasks: @escaping () -> Void,
         onNavigateToChat: @escaping () -> Void
     ) {
         self.settings = settings
         self.coordinator = coordinator
         self.mode = mode
-        self.liveIcon = liveIcon
         self.onNavigateToTasks = onNavigateToTasks
         self.onNavigateToChat = onNavigateToChat
         if CommandLine.arguments.contains("--demo-mochi-drag") {
@@ -102,32 +99,9 @@ struct MochiStageView: View {
         TimelineView(.animation) { timeline in
             GeometryReader { geo in
                 let now = timeline.date.timeIntervalSinceReferenceDate
-                let mouse = NSEvent.mouseLocation
-                let screen = NSScreen.main ?? NSScreen.screens.first!
-                let botScreenX = screen.frame.midX
-                let botScreenY = screen.frame.maxY - 90
-                let rawLookX = (mouse.x - botScreenX) / 240
-                let rawLookY = (mouse.y - botScreenY) / 160
-                let lookX = CGFloat(tanh(rawLookX))
-                let lookY = CGFloat(tanh(rawLookY))
 
                 // Procedural breath (0.42 Hz = 2.4s cycle)
                 let breath = CGFloat(sin(now * 2 * .pi * 0.42))
-
-                // Wave motion (2.2 Hz normal, 4.5 Hz happy)
-                let waveFreq = mochi.isHappy ? 4.5 : 2.2
-                let wave = CGFloat(sin(now * 2 * .pi * waveFreq))
-
-                // Procedural blink every ~3.6s
-                let blinkCycle = now.truncatingRemainder(dividingBy: 3.6)
-                let eyeOpen: CGFloat = {
-                    if mochi.isHappy { return 0 }
-                    if blinkCycle < 0.14 {
-                        let k = CGFloat(blinkCycle / 0.14)
-                        return max(0.08, 1.0 - sin(.pi * k) * 0.94)
-                    }
-                    return 1.0
-                }()
 
                 let cx = geo.size.width / 2
                 let cy = geo.size.height / 2 + (mochi.isHappy ? -4.0 : 1.2 * breath)
@@ -427,78 +401,44 @@ struct MiniMochiView: View {
 /// Renders the real Living Icon sprite when the pack is available and falls
 /// back to the procedural vector body otherwise. The procedural path is kept
 /// because it is the only thing that draws if the pack fails to load, and a
-/// blank hero card is a worse failure than a plainer mascot.
+/// Animated 3D robot companion on the inline activity form card.
 struct MochiAnimatedHeroView: View {
-    var isHappy: Bool = true
+    var state: RobotHeadState = .happy
     var scale: CGFloat = 1.0
-    var pack: LiveIconPack? = nil
-    var voice: MochiVoice = .idle
-    var moodOverride: LiveIconPack.Mood? = nil
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            GeometryReader { geo in
-                let now = timeline.date.timeIntervalSinceReferenceDate
-                let mouse = NSEvent.mouseLocation
-                let screen = NSScreen.main ?? NSScreen.screens.first!
-                let botScreenX = screen.frame.midX
-                let botScreenY = screen.frame.maxY - 90
-                let rawLookX = (mouse.x - botScreenX) / 240
-                let rawLookY = (mouse.y - botScreenY) / 160
-                let lookX = CGFloat(tanh(rawLookX))
-                let lookY = CGFloat(tanh(rawLookY))
+        GeometryReader { geo in
+            let cx = geo.size.width / 2
+            let cy = geo.size.height / 2
 
-                // Procedural breath (0.42 Hz)
-                let breath = CGFloat(sin(now * 2 * .pi * 0.42))
+            ZStack {
+                // Soft ambient radial glow behind the robot head
+                RadialGradient(
+                    stops: [
+                        .init(color: Color(hex: 0x60A5FA).opacity(state == .happy ? 0.38 : 0.20), location: 0),
+                        .init(color: Color(hex: 0x3B82F6).opacity(0.12), location: 0.45),
+                        .init(color: Color.clear, location: 0.80)
+                    ],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 85 * scale
+                )
+                .frame(width: 170 * scale, height: 170 * scale)
+                .position(x: cx, y: cy)
+                .allowsHitTesting(false)
 
-                // Wave motion (4.5 Hz when happy, 2.2 Hz normal)
-                let waveFreq = isHappy ? 4.5 : 2.2
-                let wave = CGFloat(sin(now * 2 * .pi * waveFreq))
-
-                // Procedural blink every ~3.6s
-                let blinkCycle = now.truncatingRemainder(dividingBy: 3.6)
-                let eyeOpen: CGFloat = {
-                    if isHappy { return 0 }
-                    if blinkCycle < 0.14 {
-                        let k = CGFloat(blinkCycle / 0.14)
-                        return max(0.08, 1.0 - sin(.pi * k) * 0.94)
-                    }
-                    return 1.0
-                }()
-
-                let cx = geo.size.width / 2
-                let cy = geo.size.height / 2 + (isHappy ? -3.0 : 1.2 * breath)
-
-                ZStack {
-                    // Soft ambient radial glow behind Mochi
-                    RadialGradient(
-                        stops: [
-                            .init(color: Color(hex: 0x60A5FA).opacity(isHappy ? 0.38 : 0.20), location: 0),
-                            .init(color: Color(hex: 0x3B82F6).opacity(0.12), location: 0.45),
-                            .init(color: Color.clear, location: 0.80)
-                        ],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 85 * scale
-                    )
-                    .frame(width: 170 * scale, height: 170 * scale)
-                    .position(x: cx, y: cy)
-                    .allowsHitTesting(false)
-
-                    Group {
-                        RobotHeadView(
-                            state: isHappy ? .happy : .working,
-                            shape: .rectangle,
-                            size: 104 * scale,
-                            color: "#2563EB",
-                            trimColor: "#93A6C8",
-                            screenColor: "#E8F2FF",
-                            antenna: true,
-                            floorShadow: false,
-                            tracksCursor: true
-                        )
-                    }
-                }
+                RobotHeadView(
+                    state: state,
+                    shape: .rectangle,
+                    size: 104 * scale,
+                    color: "#2563EB",
+                    trimColor: "#93A6C8",
+                    screenColor: "#E8F2FF",
+                    antenna: true,
+                    floorShadow: false,
+                    tracksCursor: true
+                )
+                .position(x: cx, y: cy)
             }
         }
     }

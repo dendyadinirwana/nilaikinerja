@@ -47,6 +47,7 @@ enum ReportBuilder {
 
     // MARK: - Daily
 
+    @discardableResult
     static func daily(
         on date: Date,
         store: SessionStore,
@@ -115,6 +116,7 @@ enum ReportBuilder {
 
     // MARK: - Monthly
 
+    @discardableResult
     static func monthly(
         in interval: DateInterval,
         store: SessionStore,

@@ -245,7 +245,7 @@ final class AIChatService: ObservableObject {
                 }
 
                 guard http.statusCode == 200 else {
-                    var detail = "HTTP \(http.statusCode)"
+                    let detail = "HTTP \(http.statusCode)"
                     var message = ""
                     for try await line in bytes.lines {
                         if line.isEmpty { continue }

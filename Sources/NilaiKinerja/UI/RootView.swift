@@ -169,7 +169,6 @@ struct RootView: View {
                     mode: windowModel.panelMode,
                     today: windowModel.today,
                     settings: windowModel.settings,
-                    liveIcon: windowModel.liveIcon,
                     reveal: windowModel.reveal,
                     motion: motion,
                     isNotched: geometry.isNotched,
@@ -245,10 +244,6 @@ final class WindowBridge: ObservableObject {
     /// the same instance — a settings change has to resize the window, not just
     /// redraw inside it.
     let settings = AppSettings()
-    /// Decoded character animations, loaded once at launch. Fifteen APNGs is
-    /// a few hundred kilobytes of frames; re-reading them on hover would put
-    /// disk I/O on the path the user is watching most closely.
-    let liveIcon = LiveIconPack()
     /// The list entrance stagger. One per panel, so the rows can be sequenced
     /// against each other rather than each animating the instant the panel
     /// opens.
@@ -267,7 +262,6 @@ final class WindowBridge: ObservableObject {
     func bind(coordinator: TrackingCoordinator, controller: NotchWindowController) {
         self.controller = controller
         today.bind(store: coordinator.store)
-        liveIcon.load()
         refreshGeometry()
 
         // Keyboard navigation for header tabs (Left/Right Arrow, Tab, Cmd+1..4)

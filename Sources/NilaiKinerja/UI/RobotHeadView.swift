@@ -47,7 +47,7 @@ struct RobotHeadView: NSViewRepresentable {
         config.websiteDataStore = .nonPersistent()
 
         let webView = PassThroughWebView(frame: .zero, configuration: config)
-        webView.underPageBackgroundColor = .clear
+        webView.underPageBackgroundColor = NSColor.clear
         webView.setValue(false, forKey: "drawsBackground")
         webView.allowsBackForwardNavigationGestures = false
         webView.setAccessibilityElement(false)
@@ -160,5 +160,11 @@ struct RobotHeadView: NSViewRepresentable {
         deinit {
             stopTracking()
         }
+    }
+}
+
+final class PassThroughWebView: WKWebView {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
     }
 }

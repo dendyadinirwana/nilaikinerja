@@ -197,6 +197,8 @@ enum DocxWriter {
         }
         for (index, cell) in cells.enumerated() {
             let width = index < widths.count ? widths[index] : widths.last ?? 1000
+            let align = index < columns.count ? columns[index].align.rawValue : "left"
+
             // Multi-line cells use explicit newlines rather than <w:br/> so
             // the text stays greppable when the document is unzipped.
             let paragraphs = cell
@@ -204,7 +206,7 @@ enum DocxWriter {
                 .map { line -> String in
                     """
                     <w:p>
-                      <w:pPr><w:spacing w:after="20"/></w:pPr>
+                      <w:pPr><w:jc w:val="\(align)"/><w:spacing w:after="20"/></w:pPr>
                       <w:r>
                         \(bold ? "<w:rPr><w:b/></w:rPr>" : "")
                         <w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr>
@@ -214,8 +216,6 @@ enum DocxWriter {
                     """
                 }
                 .joined()
-
-            let align = index < columns.count ? columns[index].align.rawValue : "left"
             xml += """
             <w:tc>
               <w:tcPr>

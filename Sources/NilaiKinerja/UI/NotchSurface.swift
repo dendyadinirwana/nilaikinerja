@@ -17,9 +17,6 @@ struct NotchSurface: View {
     /// cascade per panel is what makes the rows arrive in sequence; a per-row
     /// instance would give every row a delay of zero.
     @ObservedObject var reveal: RevealCascade
-    /// The decoded character pack, shared with the window controller so both
-    /// the capsule and any future expanded-face render from one load.
-    let liveIcon: LiveIconPack
     let isNotched: Bool
     let visualState: NotchVisualState
     let hardwareNotchSize: CGSize
@@ -38,7 +35,6 @@ struct NotchSurface: View {
         mode: PanelMode,
         today: TodaySummary,
         settings: AppSettings,
-        liveIcon: LiveIconPack,
         reveal: RevealCascade,
         motion: NotchMotion,
         isNotched: Bool,
@@ -54,7 +50,6 @@ struct NotchSurface: View {
         self.mode = mode
         self.today = today
         self.settings = settings
-        self.liveIcon = liveIcon
         self.reveal = reveal
         // Seed the cascade now: `onChange` only fires on a *change*, so without
         // this the stored stagger would be ignored until the user moved the
@@ -228,11 +223,8 @@ struct NotchSurface: View {
         HStack(spacing: 0) {
             // Mini 3D TV robot head inside the collapsed capsule.
             LiveCharacterView(
-                emotion: "",
-                pack: liveIcon,
-                pointSize: 22,
-                voice: .idle,
-                moodOverride: today.isWorkingNow ? .excited : .calm
+                state: today.isWorkingNow ? .working : .idle,
+                pointSize: 22
             )
             .padding(.leading, 14)
             .padding(.top, 5)
@@ -360,7 +352,6 @@ struct NotchSurface: View {
                     settings: settings,
                     coordinator: coordinator,
                     mode: mode,
-                    liveIcon: liveIcon,
                     onNavigateToTasks: {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                             mode.screen = .list
@@ -382,11 +373,8 @@ struct NotchSurface: View {
             HStack(spacing: 14) {
                 // Large full animated Mochi mascot
                 MochiAnimatedHeroView(
-                    isHappy: true,
-                    scale: 1.0,
-                    pack: liveIcon,
-                    voice: .talking,
-                    moodOverride: .excited
+                    state: .happy,
+                    scale: 1.0
                 )
                     .frame(width: 140, height: 104)
                     .padding(.leading, 6)

@@ -943,16 +943,18 @@ enum SelfTest {
     }
 
     private static func testCharacterResources() {
-        // The web view resolves these by relative path, so if the build stops
-        // copying Resources the panel renders an empty box with no error.
-        check("character.html is in the bundle", resource("character", "html") != nil)
+        // The 3D robot head engine from fayazara/robot-heads (MIT)
         check(
-            "the engine entry point is in the bundle",
-            resource("engine", "js", "mood-mates/src/core") != nil
+            "robot.html is in the bundle",
+            resource("robot", "html", "robot-heads") != nil || resource("robot", "html") != nil
         )
         check(
-            "the character module is in the bundle",
-            resource("nimbo", "js", "mood-mates/src/characters") != nil
+            "the robot-heads engine is in the bundle",
+            resource("robot-heads", "js", "robot-heads") != nil || resource("robot-heads", "js") != nil
+        )
+        check(
+            "AppIcon.icns is in the bundle",
+            resource("AppIcon", "icns") != nil
         )
     }
 
