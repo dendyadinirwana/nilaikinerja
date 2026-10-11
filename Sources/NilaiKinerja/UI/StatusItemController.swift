@@ -165,6 +165,7 @@ extension Notification.Name {
     /// attached.
     static let notchDroppedFiles = Notification.Name("id.simbang.notch.droppedFiles")
     static let notchDropCelebrated = Notification.Name("id.simbang.notch.dropCelebrated")
+    static let notchDropScanning = Notification.Name("id.simbang.notch.dropScanning")
     static let notchDropFailed = Notification.Name("id.simbang.notch.dropFailed")
     static let notchDragHoverChanged = Notification.Name("id.simbang.notch.dragHoverChanged")
     static let notchFilesDelivered = Notification.Name("id.simbang.notch.filesDelivered")

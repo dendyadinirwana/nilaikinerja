@@ -500,20 +500,20 @@ final class NotchWindowController: NSObject {
         let wasOpen = dragHoldingOpen
         dragHoldingOpen = false
 
-        // Delay disarming by 350ms so AppKit's dragging manager can invoke
+        // Delay disarming by 600ms so AppKit's dragging manager can invoke
         // performDragOperation before the window ignores mouse events.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             guard let self else { return }
+            let delivered = self.dragDeliveredFiles
             self.dragArmed = false
             self.mirrorDragArmed?(false)
-            let delivered = self.dragDeliveredFiles
             self.dragDeliveredFiles = false
-            NKLog("[Drag] endDragHold finalized — wasOpen=\(wasOpen) delivered=\(delivered) mouseInsideRect=\(NSMouseInRect(NSEvent.mouseLocation, self.interactiveRect, false))")
-            if wasOpen { self.onDragHover?(false) }
-            if !delivered {
+            NKLog("[Drag] endDragHold finalized — wasOpen=\(wasOpen) delivered=\(delivered)")
+            if wasOpen && !delivered {
+                self.onDragHover?(false)
                 self.onDragCancelled?()
             }
-            if !NSMouseInRect(NSEvent.mouseLocation, self.interactiveRect, false) {
+            if !delivered && !NSMouseInRect(NSEvent.mouseLocation, self.interactiveRect, false) {
                 self.panel?.ignoresMouseEvents = true
             }
         }
@@ -555,16 +555,21 @@ final class NotchWindowController: NSObject {
                 // so the dwell timer never promotes to expanded after the user has left.
                 collapseWorkItem?.cancel()
                 collapseWorkItem = nil
-                panel?.ignoresMouseEvents = true
+                if !dragArmed && !dragHoldingOpen && !dragDeliveredFiles {
+                    panel?.ignoresMouseEvents = true
+                }
                 onHoverChange?(false)
             } else if collapseWorkItem == nil {
                 // When already expanded, apply the grace period so reaching for
                 // controls doesn't snap the panel shut mid-reach.
                 let work = DispatchWorkItem { [weak self] in
-                    self?.collapseWorkItem = nil
-                    self?.panel?.ignoresMouseEvents = true
+                    guard let self else { return }
+                    self.collapseWorkItem = nil
+                    if !self.dragArmed && !self.dragHoldingOpen && !self.dragDeliveredFiles {
+                        self.panel?.ignoresMouseEvents = true
+                    }
                     NKLog("[Hover] collapse fired — releasing panel")
-                    self?.onHoverChange?(false)
+                    self.onHoverChange?(false)
                 }
                 collapseWorkItem = work
                 DispatchQueue.main.asyncAfter(deadline: .now() + collapseDelay, execute: work)
@@ -582,7 +587,11 @@ final class NotchWindowController: NSObject {
         presentedExpanded = expanded
         interactiveRect = NotchGeometry.presentedFrame(on: metrics.screen, size: size)
         let inside = NSMouseInRect(NSEvent.mouseLocation, interactiveRect, false)
-        panel?.ignoresMouseEvents = !inside
+        if !dragArmed && !dragHoldingOpen && !dragDeliveredFiles {
+            panel?.ignoresMouseEvents = !inside
+        } else {
+            panel?.ignoresMouseEvents = false
+        }
         trace("presented \(Int(size.width))x\(Int(size.height)) expanded=\(expanded) mouseInside=\(inside)")
         if expanded && inside {
             if panel?.isKeyWindow == false {
@@ -759,5 +768,69 @@ extension NotchWindowController: NSWindowDelegate {
         MainActor.assumeIsolated { [weak self] in
             self?.onHoverChange?(false)
         }
+    }
+}
+
+
+extension NotchWindowController: NSDraggingDestination {
+    func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        let urls = Self.extractURLs(from: sender)
+        guard !urls.isEmpty else { return [] }
+        handleDragHover(sender.draggingLocation)
+        return .copy
+    }
+
+    func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        let urls = Self.extractURLs(from: sender)
+        guard !urls.isEmpty else { return [] }
+        return .copy
+    }
+
+    func draggingExited(_ sender: NSDraggingInfo?) {
+        // Drag left window
+    }
+
+    func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let urls = Self.extractURLs(from: sender)
+        return !urls.isEmpty
+    }
+
+    func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let urls = Self.extractURLs(from: sender)
+        guard !urls.isEmpty else {
+            NSLog("[Drag] WindowController performDragOperation — no file URLs")
+            return false
+        }
+        NSLog("[Drag] WindowController performDragOperation — accepted \(urls.count) file(s)")
+        noteDragDeliveredFiles()
+        NotificationCenter.default.post(name: .notchFilesDelivered, object: nil)
+        NotificationCenter.default.post(
+            name: .notchDroppedFiles,
+            object: nil,
+            userInfo: ["urls": urls]
+        )
+        return true
+    }
+
+    static func extractURLs(from sender: NSDraggingInfo) -> [URL] {
+        var result: [URL] = []
+        let pboard = sender.draggingPasteboard
+        let options: [NSPasteboard.ReadingOptionKey: Any] = [
+            .urlReadingFileURLsOnly: true
+        ]
+        if let objects = pboard.readObjects(forClasses: [NSURL.self], options: options) as? [URL] {
+            result.append(contentsOf: objects)
+        }
+        if result.isEmpty, let items = pboard.pasteboardItems {
+            for item in items {
+                if let str = item.string(forType: .fileURL), let u = URL(string: str) {
+                    result.append(u)
+                }
+            }
+        }
+        if result.isEmpty, let filenames = pboard.propertyList(forType: .init("NSFilenamesPboardType")) as? [String] {
+            result.append(contentsOf: filenames.map { URL(fileURLWithPath: $0) })
+        }
+        return result.filter { $0.isFileURL && !$0.hasDirectoryPath }
     }
 }

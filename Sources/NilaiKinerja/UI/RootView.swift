@@ -218,6 +218,7 @@ struct RootView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .notchDroppedFiles)) { note in
             guard let urls = note.userInfo?["urls"] as? [URL], !urls.isEmpty else { return }
+            self.hover.setPinned(true, fromDrop: true)
             MochiDropHandler.handleDrop(
                 urls: urls,
                 coordinator: self.coordinator,

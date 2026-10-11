@@ -4,11 +4,14 @@ import SwiftUI
 
 /// Handles drag-and-drop file ingestion directly onto Mochi or the notch capsule.
 ///
-/// When files are dropped, opens the "Tambah kegiatan" screen with:
-/// - Activity title derived cleanly from the filename
-/// - Time range defaulting to current time with 1 hour duration
-/// - Dropped files pre-attached to the activity draft
-/// - Automatic panel expansion so the user can immediately review and save.
+/// When files are dropped:
+/// 1. Verifies supported file format (PDF, Word, Excel, Images).
+/// 2. If unsupported: triggers .notchDropFailed (RobotHead in .error state with head shake & red X X eyes).
+/// 3. If supported:
+///    - Expands the panel to .home stage with the robot in scanning mode (.searching) for 1.5 seconds.
+///    - Displays a "Memindai Berkas..." scanning badge.
+///    - Once scanning completes (up to 2 seconds), automatically slides open the AddActivityForm
+///      prefilled with the clean title, 1-hour time slot, and attached documents, while celebrating (.happy)!
 @MainActor
 enum MochiDropHandler {
     /// Allowed formats: PDF, Word (docx/doc), Excel (xlsx/xls/csv), and Images.
@@ -27,7 +30,8 @@ enum MochiDropHandler {
     static func handleDrop(
         urls: [URL],
         coordinator: TrackingCoordinator?,
-        mode: PanelMode?
+        mode: PanelMode?,
+        immediate: Bool = CommandLine.arguments.contains("--selftest")
     ) -> (success: Bool, title: String) {
         guard let firstURL = urls.first else { return (false, "") }
 
@@ -39,6 +43,10 @@ enum MochiDropHandler {
                 : "FILE"
             let errorReason = "Format .\(ext) tidak didukung (Hanya PDF, Word, Excel, Gambar)"
 
+            mode?.isHomeFormOpen = false
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
+                mode?.screen = .home
+            }
             // Open panel so user sees the robot head in error state with red pill
             NotificationCenter.default.post(name: .notchExpandPanel, object: nil)
             NotificationCenter.default.post(
@@ -52,33 +60,58 @@ enum MochiDropHandler {
 
         let cleanedTitle = cleanActivityTitle(from: firstURL)
 
-        // Standard time assumption: current time with 1 hour duration
-        let now = Date()
-        let oneHourLater = now.addingTimeInterval(3600)
+        let populateForm = {
+            let now = Date()
+            let oneHourLater = now.addingTimeInterval(3600)
 
-        // Set prefill data on panelMode so AddActivityForm opens populated
-        mode?.prefillAddTitle = cleanedTitle
-        mode?.prefillAddDetail = urls.count == 1
-            ? "Dokumen pendukung dari berkas: \(firstURL.lastPathComponent)"
-            : "Dokumen pendukung dari \(urls.count) berkas"
-        mode?.prefillAddURLs = urls
-        mode?.prefillAddFrom = now
-        mode?.prefillAddTo = oneHourLater
+            mode?.prefillAddTitle = cleanedTitle
+            mode?.prefillAddDetail = urls.count == 1
+                ? "Dokumen pendukung dari berkas: \(firstURL.lastPathComponent)"
+                : "Dokumen pendukung dari \(urls.count) berkas"
+            mode?.prefillAddURLs = urls
+            mode?.prefillAddFrom = now
+            mode?.prefillAddTo = oneHourLater
 
-        // Keep on .home screen and trigger the inline activity form with Mochi companion
-        mode?.isHomeFormOpen = true
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) {
+                mode?.isHomeFormOpen = true
+                mode?.screen = .home
+            }
+
+            NotificationCenter.default.post(
+                name: .notchDropCelebrated,
+                object: nil,
+                userInfo: ["title": cleanedTitle]
+            )
+            NSSound(named: "Glass")?.play()
+        }
+
+        if immediate {
+            NotificationCenter.default.post(name: .notchExpandPanel, object: nil)
+            populateForm()
+            return (true, cleanedTitle)
+        }
+
+        // 1. Expand panel and stay on home stage (form closed) to display scanning mode
+        mode?.isHomeFormOpen = false
         withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
             mode?.screen = .home
         }
-
-        // Expand the notch panel so user sees Mochi and the form immediately
         NotificationCenter.default.post(name: .notchExpandPanel, object: nil)
+
+        // 2. Post scanning notification so RobotHead switches to .searching state
         NotificationCenter.default.post(
-            name: .notchDropCelebrated,
+            name: .notchDropScanning,
             object: nil,
-            userInfo: ["title": cleanedTitle]
+            userInfo: [
+                "filename": firstURL.lastPathComponent,
+                "title": cleanedTitle
+            ]
         )
-        NSSound(named: "Glass")?.play()
+
+        // 3. After scanning period (1.5s max 2s), transition smoothly to AddActivityForm!
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            populateForm()
+        }
 
         return (true, cleanedTitle)
     }

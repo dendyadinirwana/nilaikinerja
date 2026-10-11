@@ -8,14 +8,17 @@ import AppKit
 final class MochiState: ObservableObject {
     @Published var isHappy: Bool = false
     @Published var isError: Bool = false
+    @Published var isScanning: Bool = false
     @Published var tapCount: Int = 0
     @Published var isDragOver: Bool = false
     @Published var dropSuccessTitle: String? = nil
     @Published var dropErrorTitle: String? = nil
+    @Published var scanningFilename: String? = nil
     @Published var pokeTrigger: Int = 0
 
     private var happyTask: Task<Void, Never>?
     private var errorTask: Task<Void, Never>?
+    private var scanTask: Task<Void, Never>?
 
     func reactToTap() {
         tapCount += 1
@@ -31,7 +34,24 @@ final class MochiState: ObservableObject {
         }
     }
 
+    func reactToScanning(filename: String) {
+        errorTask?.cancel()
+        happyTask?.cancel()
+        scanTask?.cancel()
+        isHappy = false
+        isError = false
+        dropErrorTitle = nil
+        dropSuccessTitle = nil
+
+        isScanning = true
+        scanningFilename = filename
+    }
+
     func reactToDrop(title: String) {
+        scanTask?.cancel()
+        isScanning = false
+        scanningFilename = nil
+
         errorTask?.cancel()
         isError = false
         dropErrorTitle = nil
@@ -50,6 +70,10 @@ final class MochiState: ObservableObject {
     }
 
     func reactToError(reason: String) {
+        scanTask?.cancel()
+        isScanning = false
+        scanningFilename = nil
+
         happyTask?.cancel()
         isHappy = false
         dropSuccessTitle = nil
@@ -137,8 +161,24 @@ struct MochiStageView: View {
                     .position(x: cx, y: cy)
                     .allowsHitTesting(false)
 
-                    // Drop instruction / Success pill indicator
-                    if mochi.isDragOver {
+                    // Drop instruction / Scanning / Error / Success pill indicator
+                    if mochi.isScanning {
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .controlSize(.mini)
+                                .tint(Color(hex: 0x38BDF8))
+                            Text(mochi.scanningFilename != nil ? "Memindai \(mochi.scanningFilename!)..." : "Memindai Berkas...")
+                                .font(.system(size: 11.5, weight: .semibold))
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(Capsule().fill(Color(hex: 0x0284C7)))
+                        .shadow(color: Color(hex: 0x0284C7).opacity(0.5), radius: 8, y: 3)
+                        .position(x: cx, y: cy - 78)
+                        .allowsHitTesting(false)
+                    } else if mochi.isDragOver {
                         HStack(spacing: 6) {
                             Image(systemName: "tray.and.arrow.down.fill")
                                 .font(.system(size: 11, weight: .bold))
@@ -187,7 +227,7 @@ struct MochiStageView: View {
                     // Animated 3D robot head from fayazara/robot-heads (MIT License).
                     RobotHeadView(
                         state: mochi.isError ? .error
-                            : (mochi.isDragOver ? .searching
+                            : (mochi.isScanning || mochi.isDragOver ? .searching
                             : (mochi.isHappy ? .happy : .idle)),
                         shape: .rectangle,
                         size: 140,
@@ -214,6 +254,10 @@ struct MochiStageView: View {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                 mochi.isDragOver = isHovering
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .notchDropScanning)) { note in
+            let filename = note.userInfo?["filename"] as? String ?? "berkas"
+            mochi.reactToScanning(filename: filename)
         }
         .onReceive(NotificationCenter.default.publisher(for: .notchDropCelebrated)) { note in
             if let title = note.userInfo?["title"] as? String {
