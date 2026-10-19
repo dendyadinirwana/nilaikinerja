@@ -123,7 +123,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             bridge.panelMode.screen = .add
         }
         if demoMode == .addPrefill {
-            let fixture = FileManager.default.temporaryDirectory.appendingPathComponent("Laporan_Evaluasi_PPDT_2026.pdf")
+            let fixture = FileManager.default.temporaryDirectory.appendingPathComponent("Laporan_Evaluasi_Kinerja_2026.pdf")
             try? "PDF-DUMMY".data(using: .utf8)?.write(to: fixture)
             MochiDropHandler.handleDrop(urls: [fixture], coordinator: coordinator, mode: bridge.panelMode)
         }
@@ -141,7 +141,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                 let settings = AppSettings.shared
                 AIChatService.shared.sendMessage(
-                    "Berikan ringkasan 2 langkah verifikasi SIPPDT dalam format Markdown: ada heading sub-judul, bullet point dengan **kata tebal**, dan satu blok kode bash singkat.",
+                    "Berikan ringkasan 2 langkah verifikasi laporan kinerja dalam format Markdown: ada heading sub-judul, bullet point dengan **kata tebal**, dan satu blok ringkasan singkat.",
                     baseURL: settings.aiBaseURL,
                     storedKey: settings.aiApiKey,
                     model: settings.aiModel

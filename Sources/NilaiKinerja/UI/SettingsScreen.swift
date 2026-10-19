@@ -602,7 +602,7 @@ struct SettingsScreen: View {
                     Text("Base URL API")
                         .font(.system(size: 12.5, weight: .medium))
                         .foregroundStyle(.white.opacity(0.70))
-                    TextField("http://localhost:20128/v1", text: $settings.aiBaseURL)
+                    TextField("http://localhost:11434/v1 (atau https://api.openai.com/v1)", text: $settings.aiBaseURL)
                         .textFieldStyle(.plain)
                         .font(.system(size: 12.5, design: .monospaced))
                         .foregroundStyle(.white)
@@ -643,7 +643,7 @@ struct SettingsScreen: View {
                         .font(.system(size: 12.5, weight: .medium))
                         .foregroundStyle(.white.opacity(0.70))
                     HStack(spacing: 8) {
-                        TextField("antigravity", text: $settings.aiModel)
+                        TextField("llama3, gpt-4o-mini, dll.", text: $settings.aiModel)
                             .textFieldStyle(.plain)
                             .font(.system(size: 12.5, design: .monospaced))
                             .foregroundStyle(.white)

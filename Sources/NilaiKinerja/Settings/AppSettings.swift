@@ -289,8 +289,8 @@ final class AppSettings: ObservableObject {
         self.reminderIntervalMinutes = Self.readInt(defaults, Key.reminderIntervalMinutes, 60, range: 15...180)
         self.reminderSoundEnabled = defaults.object(forKey: Key.reminderSoundEnabled) as? Bool ?? true
 
-        self.aiBaseURL = defaults.string(forKey: Key.aiBaseURL) ?? "http://localhost:20128/v1"
-        self.aiModel = defaults.string(forKey: Key.aiModel) ?? "antigravity"
+        self.aiBaseURL = defaults.string(forKey: Key.aiBaseURL) ?? "http://localhost:11434/v1"
+        self.aiModel = defaults.string(forKey: Key.aiModel) ?? "llama3"
         self.idleGlowEnabled = defaults.object(forKey: Key.idleGlowEnabled) as? Bool ?? true
         self.idleGlowIntensity = Self.read(
             defaults, Key.idleGlowIntensity, 0.65, range: 0.2...1.0)
@@ -353,8 +353,8 @@ final class AppSettings: ObservableObject {
         reminderEnabled = true
         reminderIntervalMinutes = 60
         reminderSoundEnabled = true
-        aiBaseURL = "http://localhost:20128/v1"
-        aiModel = "antigravity"
+        aiBaseURL = "http://localhost:11434/v1"
+        aiModel = "llama3"
         aiApiKey = AIKeyResolver.liveGatewayKey() ?? ""
         idleGlowEnabled = true
         idleGlowIntensity = 0.65

@@ -1,7 +1,53 @@
+# Build outputs and distributions
 dist/
 build/
 .build/
 *.xcodeproj
 *.xcworkspace
-.DS_Store
+xcuserdata/
+.swiftpm/
+
+# Environment, secrets, and credentials
+.env
+.env.*
+*.env
+*.secret
+*.key
+*.pem
+*.token
+
+# Local databases and runtime state
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# User generated exports and attachments (keep repo clean)
+*.docx
+*.xlsx
+*.pptx
+*.pdf
+!Resources/**
+Attachments/
+Exports/
+
+# Logs and crash reports
 *.log
+*.crash
+diagnostic.txt
+
+# macOS system files
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Temporary files and editor state
+*.tmp
+*.swp
+*.swo
+*~
+.idea/
+.vscode/

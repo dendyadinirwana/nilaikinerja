@@ -238,10 +238,10 @@ enum SelfTest {
         store.deleteAll()
 
         // 1. Title formatting
-        let url1 = URL(fileURLWithPath: "/tmp/Laporan_Evaluasi_PPDT_2026.pdf")
+        let url1 = URL(fileURLWithPath: "/tmp/Laporan_Evaluasi_Kinerja_2026.pdf")
         check(
             "title cleans underscore and prefix",
-            MochiDropHandler.cleanActivityTitle(from: url1) == "Laporan Evaluasi PPDT 2026"
+            MochiDropHandler.cleanActivityTitle(from: url1) == "Laporan Evaluasi Kinerja 2026"
         )
 
         let url2 = URL(fileURLWithPath: "/tmp/Screenshot_2026-10-04_at_12.00.00.png")
@@ -517,7 +517,7 @@ enum SelfTest {
         check("reset restores expandedWidth", abs(settings.expandedWidth - 640) < 0.001)
         check("reset restores workStartHour", settings.workStartHour == 7)
         check("reset restores reminderEnabled", settings.reminderEnabled == true)
-        check("reset restores aiModel", settings.aiModel == "antigravity")
+        check("reset restores aiModel", settings.aiModel == "llama3")
         settings.autoCheckUpdates = false
         check("autoCheckUpdates can be toggled", !settings.autoCheckUpdates)
         settings.autoCheckUpdates = true

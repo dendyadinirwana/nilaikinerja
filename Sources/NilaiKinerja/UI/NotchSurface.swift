@@ -862,7 +862,7 @@ struct NotchSurface: View {
             Text("Judul pekerjaan")
                 .font(.system(size: 13.5, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.75))
-            TextField("Contoh: Review dokumen SIPPDT", text: $form.title)
+            TextField("Contoh: Review draf laporan kinerja bulanan", text: $form.title)
                 .textFieldStyle(.plain)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(.white)

@@ -48,7 +48,7 @@ final class AIChatService: ObservableObject {
     static func normalizeBaseURL(_ raw: String) -> String {
         var trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         while trimmed.hasSuffix("/") { trimmed.removeLast() }
-        if trimmed.isEmpty { return "http://localhost:20128/v1" }
+        if trimmed.isEmpty { return "http://localhost:11434/v1" }
         return trimmed
     }
 
@@ -164,7 +164,7 @@ final class AIChatService: ObservableObject {
                 [["role": "system", "content": systemPrompt]] + history
 
             let body: [String: Any] = [
-                "model": selectedModel.isEmpty ? "antigravity" : selectedModel,
+                "model": selectedModel.isEmpty ? "llama3" : selectedModel,
                 "messages": payloadMessages,
                 "stream": true,
                 "temperature": 0.7
@@ -362,7 +362,7 @@ final class AIChatService: ObservableObject {
 
             let probeModel = model.trimmingCharacters(in: .whitespacesAndNewlines)
             let body: [String: Any] = [
-                "model": probeModel.isEmpty ? "antigravity" : probeModel,
+                "model": probeModel.isEmpty ? "llama3" : probeModel,
                 "messages": [["role": "user", "content": "ping"]],
                 "stream": false,
                 "max_tokens": 8
@@ -394,7 +394,7 @@ final class AIChatService: ObservableObject {
                         let ok = text.contains("choices")
                         if ok {
                             if let key { onResolvedKey?(key) }
-                            let modelName = probeModel.isEmpty ? "antigravity" : probeModel
+                            let modelName = probeModel.isEmpty ? "llama3" : probeModel
                             statusInfo = "✓ Terhubung (\(modelName) siap)"
                             return "ok"
                         }

@@ -29,9 +29,9 @@ struct AIChatView: View {
     @StateObject private var draft = AIChatDraft()
 
     private let quickPrompts = [
-        "Buatkan draf kegiatan penyusunan pedoman umum SIPPDT",
+        "Buatkan draf kegiatan penyusunan pedoman kerja",
         "Buat laporan rekap capaian kinerja harian ASN",
-        "Formulasikan indikator target kinerja Ditjen PPDT"
+        "Formulasikan indikator target capaian kinerja bulanan"
     ]
 
     var body: some View {
@@ -376,21 +376,13 @@ struct ModelSelectorMenu: View {
     @ObservedObject var service: AIChatService
     @StateObject private var popoverState = PopoverToggle()
 
-    private let commonModels = ["antigravity", "chatgpt", "claude", "grok", "gemini/gemini-3.8-flash"]
+    private let commonModels = ["llama3", "gpt-4o-mini", "claude-3-5-sonnet", "gemini-1.5-flash", "grok-2"]
 
     var body: some View {
-        // A plain `Button` plus a popover, not `Menu`.
-        //
-        // `Menu` was swallowing the label outright. `--aipickdump` rendered the
-        // bare label and the `Menu`-wrapped copy side by side: the bare one
-        // showed dot, name and blue chevron; the wrapped one drew nothing at
-        // all. Three theories were tried and all three were wrong — template
-        // images, alpha too low, alignment — so the label can no longer be
-        // handed to a control that owns its own rendering.
         Button {
             popoverState.isShowing.toggle()
         } label: {
-            ModelSelectorLabel(model: settings.aiModel.isEmpty ? "antigravity" : settings.aiModel)
+            ModelSelectorLabel(model: settings.aiModel.isEmpty ? "llama3" : settings.aiModel)
         }
         .buttonStyle(.plain)
         .popover(isPresented: $popoverState.isShowing, arrowEdge: .bottom) {

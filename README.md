@@ -74,14 +74,14 @@ Didukung oleh engine grafis TV-headed 3D bot dari [`fayazara/robot-heads`](https
 ### 3. 📂 Smart File Drag & Drop & Deep Magic-Byte Validator
 Tarik berkas dokumen kerja atau gambar apa pun langsung ke notch untuk mencatat kegiatan secara otomatis:
 - **Kalibrasi Proksimitas Notch:** Saat aplikasi dalam posisi Idle, notch tidak akan mekar sembarangan saat drag biasa di desktop atau Finder. Notch hanya akan terbangun ketika berkas benar-benar dibawa mendekati bibir notch.
-- **Stabilitas Tahan Berkas (*Zero Rush*):** Begitu mekar, panel tetap stabil terbuka tanpa rasa terburu-buru. Lo bebas menahan berkas di atas notch selama mungkin dan menjatuhkannya di mana saja di area kartu 640pt.
+- **Stabilitas Tahan Berkas (*Zero Rush*):** Begitu mekar, panel tetap stabil terbuka tanpa rasa terburu-buru. Pengguna bebas menahan berkas di atas notch selama mungkin dan menjatuhkannya di mana saja di area kartu 640pt.
 - **Inspeksi Biner & Anti-Spoofing (`FileContentValidator`):**
   - Bukan sekadar memeriksa ekstensi nama file, melainkan membedah *Magic Bytes* (header biner berkas hingga 8 KB).
   - Menolak otomatis berkas executable atau malware terselubung (Windows `MZ`/PE, Linux `ELF`, macOS `Mach-O`, shell scripts `#!`).
   - Memverifikasi keaslian paket zip OpenXML untuk dokumen Office modern (memastikan DOCX memuat `word/`, PPTX memuat `ppt/`, XLSX memuat `xl/`).
 - **Mode Auto-Scanning (1.5s):** Robot Head memindai berkas secara visual dengan status *"Memindai & Memverifikasi [Nama Berkas]..."* sebelum formulir mekar.
 - **Otomatisasi Form Kegiatan:** Setelah lolos verifikasi, formulir kegiatan meluncur otomatis:
-  - Judul kegiatan dibersihkan otomatis (contoh: `Draf_Paparan_PPDT_2026.pptx` ➔ `Draf Paparan PPDT 2026`).
+  - Judul kegiatan dibersihkan otomatis (contoh: `Draf_Paparan_Kinerja_2026.pptx` ➔ `Draf Paparan Kinerja 2026`).
   - Waktu default otomatis diatur durasi 1 jam.
   - Berkas otomatis terlampir dengan ikon format cerdas (Presentasi, Word, Excel, PDF, Teks, Foto).
 
