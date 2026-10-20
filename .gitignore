@@ -7,6 +7,14 @@ build/
 xcuserdata/
 .swiftpm/
 
+# Windows Edition (Tauri v2) build outputs
+windows/node_modules/
+windows/dist/
+windows/dist-ssr/
+windows/target/
+windows/src-tauri/target/
+windows/src-tauri/gen/schemas/
+
 # Environment, secrets, and credentials
 .env
 .env.*

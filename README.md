@@ -7,8 +7,8 @@
 <p align="center">
   <a href="https://github.com/dendyadinirwana/nilaikinerja/releases/latest"><img src="https://img.shields.io/badge/release-v1.0.0-blue.svg?style=flat-square" alt="Release v1.0.0" /></a>
   <a href="https://www.apple.com/macos/"><img src="https://img.shields.io/badge/macOS-14.0%2B%20(Sonoma%20%26%20Sequoia)-black?style=flat-square&logo=apple" alt="macOS 14.0+" /></a>
+  <a href="https://www.microsoft.com/windows/"><img src="https://img.shields.io/badge/Windows-10%20%2F%2011%20(x64)-0078D4?style=flat-square&logo=windows" alt="Windows 10/11" /></a>
   <a href="https://apple.com/mac/"><img src="https://img.shields.io/badge/Apple%20Silicon-M1%20%7C%20M2%20%7C%20M3%20%7C%20M4-black?style=flat-square" alt="Apple Silicon" /></a>
-  <a href="https://swift.org/"><img src="https://img.shields.io/badge/Swift-5.9%2B-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 5.9+" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat-square" alt="MIT License" /></a>
 </p>
 
@@ -18,9 +18,25 @@
 
 ---
 
+## 📥 Unduh Langsung (Installer Resmi)
+
+Unduh paket aplikasi sesuai sistem operasi Anda dari [GitHub Releases](https://github.com/dendyadinirwana/nilaikinerja/releases/latest):
+
+| Sistem Operasi | Konsep Tampilan | Format Berkas | Ukuran | Tautan Unduh Langsung |
+| :--- | :--- | :--- | :---: | :--- |
+| 🍏 **macOS** (Apple Silicon M-series & Intel) | **Hardware Notch MacBook** | `.zip` (App bundle) | ~5.1 MB | [**Unduh untuk macOS**](https://github.com/dendyadinirwana/nilaikinerja/releases/download/v1.0.0/NilaiKinerja.zip) |
+| 🪟 **Windows** (Windows 10 / 11 64-bit) | **Top-Center Floating Island** | `.exe` (Setup NSIS) | **1.52 MB** | [**Unduh .exe (Windows)**](https://github.com/dendyadinirwana/nilaikinerja/releases/download/v1.0.0/NilaiKinerja_1.0.0_x64-setup.exe) |
+| 🪟 **Windows** (Enterprise / IT Admin) | **Top-Center Floating Island** | `.msi` (MSI Package) | **2.20 MB** | [**Unduh .msi (Windows)**](https://github.com/dendyadinirwana/nilaikinerja/releases/download/v1.0.0/NilaiKinerja_1.0.0_x64_en-US.msi) |
+
+---
+
 ## 🌟 Ikhtisar
 
-**NilaiKinerja** adalah utilitas desktop macOS modern yang menyatu mulus ke dalam hardware notch MacBook. Dirancang untuk membantu aparatur sipil negara (ASN) maupun profesional mencatat kegiatan harian secara efisien, melampirkan berkas bukti dukung secara instan, dan berkonsultasi dengan Asisten AI lokal — tanpa mengganggu alur kerja utama di layar.
+**NilaiKinerja** adalah utilitas desktop lintas platform modern yang hadir dalam dua adaptasi antarmuka:
+1. **macOS Edition:** Menyatu mulus ke dalam hardware notch MacBook (SwiftUI & AppKit native).
+2. **Windows Edition (`/windows`):** Berwujud *Top-Center Floating Island* yang melayang di atas tengah layar monitor Windows 10/11 (Tauri v2 + Rust + React).
+
+Dirancang untuk membantu aparatur sipil negara (ASN) maupun profesional mencatat kegiatan harian secara efisien, melampirkan berkas bukti dukung secara instan, dan berkonsultasi dengan Asisten AI lokal — tanpa mengganggu alur kerja utama di layar.
 
 ---
 

@@ -4,12 +4,13 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  build-macos:
     name: Build macOS Release Bundle
     runs-on: macos-14
     steps:
@@ -30,12 +31,65 @@ jobs:
           zip -r -y NilaiKinerja.zip NilaiKinerja.app
           ls -lh NilaiKinerja.zip
 
-      - name: Create GitHub Release
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dist
+          path: dist/NilaiKinerja.zip
+
+  build-windows:
+    name: Build Windows Release Package
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install Frontend Dependencies
+        working-directory: ./windows
+        run: pnpm install
+
+      - name: Build Tauri Windows Bundle
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: ./windows
+          tagName: ${{ github.ref_name }}
+          releaseName: 'NilaiKinerja ${{ github.ref_name }}'
+          releaseDraft: false
+          prerelease: false
+          args: --target x86_64-pc-windows-msvc
+
+  publish-combined-release:
+    name: Publish Release Assets
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download macOS Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-dist
+          path: ./dist-macos
+
+      - name: Attach macOS Bundle to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/NilaiKinerja.zip
-          generate_release_notes: true
-          draft: false
-          prerelease: false
+          files: ./dist-macos/NilaiKinerja.zip
+          tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

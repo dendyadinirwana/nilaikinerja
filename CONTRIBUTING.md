@@ -14,18 +14,26 @@ Terima kasih telah tertarik untuk berkontribusi pada **NilaiKinerja**! Proyek in
 
 ## 🚀 Alur Kerja Pembangunan (Build Workflow)
 
-Proyek ini dilengkapi skrip pembangunan mandiri `build.sh`:
-
+### 🍏 Membangun Versi macOS (SwiftPM & AppKit Native):
+Proyek macOS dilengkapi skrip pembangunan mandiri `build.sh`:
 ```bash
-# 1. Clone repositori
-git clone https://github.com/dendyadinirwana/nilaikinerja.git
-cd nilaikinerja
-
-# 2. Kompilasi dan kemas aplikasi (Release mode)
+# Kompilasi dan kemas aplikasi macOS (Release mode)
 ./build.sh release
 
-# Aplikasi yang telah dikompilasi dan di-codesign ad-hoc akan tersedia di:
-# dist/NilaiKinerja.app
+# Hasil build terpasang di dist/NilaiKinerja.app
+```
+
+### 🪟 Membangun Versi Windows (Tauri v2 + Rust + React):
+Proyek Windows terletak di dalam direktori `windows/`:
+```bash
+cd windows
+pnpm install
+
+# Menjalankan mode pengembangan (live reload)
+pnpm tauri dev
+
+# Membangun paket installer mandiri (.exe & .msi)
+pnpm tauri build
 ```
 
 ---
