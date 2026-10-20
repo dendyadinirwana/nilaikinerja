@@ -131,19 +131,21 @@ final class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegat
                 self.lastChecked = Date()
 
                 if Self.isVersion(release.tagName, newerThan: self.currentVersion) {
-                    // Find zip asset
-                    let zipAsset = release.assets.first { asset in
+                    // Find dmg or zip package asset
+                    let packageAsset = release.assets.first { asset in
+                        asset.name.hasSuffix(".dmg")
+                    } ?? release.assets.first { asset in
                         asset.name.hasSuffix(".zip")
                     }
 
-                    if let asset = zipAsset, let downloadURL = URL(string: asset.browserDownloadUrl) {
+                    if let asset = packageAsset, let downloadURL = URL(string: asset.browserDownloadUrl) {
                         self.status = .available(
                             version: release.tagName,
                             notes: release.body ?? "Pembaruan versi \(release.tagName) tersedia.",
                             downloadURL: downloadURL
                         )
                     } else if let htmlUrl = URL(string: release.htmlUrl) {
-                        // Fallback: no zip asset uploaded, point to release page
+                        // Fallback: no direct package uploaded, point to release page
                         self.status = .available(
                             version: release.tagName,
                             notes: release.body ?? "Pembaruan versi \(release.tagName) tersedia.",
@@ -167,8 +169,10 @@ final class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegat
     func downloadAndInstall() {
         guard case .available(let version, _, let downloadURL) = status else { return }
 
-        // If URL points to browser htmlUrl (no direct zip), open in browser
-        if !downloadURL.pathExtension.lowercased().contains("zip") && !downloadURL.lastPathComponent.contains(".zip") {
+        // If URL points to browser htmlUrl (no direct dmg or zip), open in browser
+        let ext = downloadURL.pathExtension.lowercased()
+        let isDirect = ext == "dmg" || ext == "zip" || downloadURL.lastPathComponent.contains(".dmg") || downloadURL.lastPathComponent.contains(".zip")
+        if !isDirect {
             NSWorkspace.shared.open(downloadURL)
             return
         }
@@ -207,28 +211,64 @@ final class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegat
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
-        let tempZip = FileManager.default.temporaryDirectory
-            .appendingPathComponent("NilaiKinerja-OTA-\(UUID().uuidString).zip")
+        let reqURL = downloadTask.originalRequest?.url
+        let isDmg = reqURL?.pathExtension.lowercased() == "dmg"
+            || reqURL?.lastPathComponent.lowercased().contains(".dmg") == true
+            || downloadTask.response?.suggestedFilename?.lowercased().hasSuffix(".dmg") == true
+
         let stagingDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("NilaiKinerja-Staging-\(UUID().uuidString)", isDirectory: true)
 
         do {
-            try FileManager.default.moveItem(at: location, to: tempZip)
             try FileManager.default.createDirectory(at: stagingDir, withIntermediateDirectories: true)
 
-            // Extract using macOS ditto to preserve symlinks and app bundle signatures
-            let ditto = Process()
-            ditto.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-            ditto.arguments = ["-xk", tempZip.path, stagingDir.path]
-            try ditto.run()
-            ditto.waitUntilExit()
+            if isDmg {
+                let tempDmg = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("NilaiKinerja-OTA-\(UUID().uuidString).dmg")
+                try FileManager.default.moveItem(at: location, to: tempDmg)
+                defer { try? FileManager.default.removeItem(at: tempDmg) }
 
-            try? FileManager.default.removeItem(at: tempZip)
+                let mountDir = stagingDir.appendingPathComponent("mount", isDirectory: true)
+                try FileManager.default.createDirectory(at: mountDir, withIntermediateDirectories: true)
+
+                let attach = Process()
+                attach.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
+                attach.arguments = ["attach", "-nobrowse", "-readonly", tempDmg.path, "-mountpoint", mountDir.path]
+                try attach.run()
+                attach.waitUntilExit()
+
+                let appInMount = mountDir.appendingPathComponent("NilaiKinerja.app")
+                let extractedApp = stagingDir.appendingPathComponent("NilaiKinerja.app")
+
+                let ditto = Process()
+                ditto.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+                ditto.arguments = [appInMount.path, extractedApp.path]
+                try ditto.run()
+                ditto.waitUntilExit()
+
+                let detach = Process()
+                detach.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
+                detach.arguments = ["detach", mountDir.path, "-force"]
+                try? detach.run()
+                detach.waitUntilExit()
+            } else {
+                let tempZip = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("NilaiKinerja-OTA-\(UUID().uuidString).zip")
+                try FileManager.default.moveItem(at: location, to: tempZip)
+                defer { try? FileManager.default.removeItem(at: tempZip) }
+
+                // Extract using macOS ditto to preserve symlinks and app bundle signatures
+                let ditto = Process()
+                ditto.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+                ditto.arguments = ["-xk", tempZip.path, stagingDir.path]
+                try ditto.run()
+                ditto.waitUntilExit()
+            }
 
             let extractedApp = stagingDir.appendingPathComponent("NilaiKinerja.app")
             guard FileManager.default.fileExists(atPath: extractedApp.path) else {
                 Task { @MainActor in
-                    self.status = .error(message: "Berkas zip tidak berisi NilaiKinerja.app yang valid")
+                    self.status = .error(message: "Paket pembaruan tidak berisi NilaiKinerja.app yang valid")
                 }
                 return
             }
@@ -240,7 +280,7 @@ final class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegat
             }
         } catch {
             Task { @MainActor in
-                self.status = .error(message: "Gagal mengekstrak berkas: \(error.localizedDescription)")
+                self.status = .error(message: "Gagal memproses pembaruan: \(error.localizedDescription)")
             }
         }
     }

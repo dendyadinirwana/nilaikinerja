@@ -25,17 +25,15 @@ jobs:
           chmod +x build.sh
           ./build.sh release
 
-      - name: Package Distribution Zip
+      - name: Package Distribution DMG
         run: |
-          cd dist
-          zip -r -y NilaiKinerja.zip NilaiKinerja.app
-          ls -lh NilaiKinerja.zip
+          ls -lh dist/NilaiKinerja.dmg
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
           name: macos-dist
-          path: dist/NilaiKinerja.zip
+          path: dist/NilaiKinerja.dmg
 
   build-windows:
     name: Build Windows Release Package
@@ -89,7 +87,7 @@ jobs:
       - name: Attach macOS Bundle to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./dist-macos/NilaiKinerja.zip
+          files: ./dist-macos/NilaiKinerja.dmg
           tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

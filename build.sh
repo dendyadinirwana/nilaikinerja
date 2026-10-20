@@ -78,6 +78,19 @@ echo "==> built: $APP_PATH"
 echo "    run:   $APP_PATH/Contents/MacOS/$APP_NAME"
 echo "    disk:  $(du -sh "$APP_PATH" | cut -f1)"
 
+if [[ "$CONFIG" == "release" ]]; then
+  echo "==> packaging disk image ($APP_NAME.dmg)"
+  DMG_STAGING="/tmp/nk_dmg_staging_$$"
+  rm -rf "$DMG_STAGING"
+  mkdir -p "$DMG_STAGING"
+  ditto "$APP_PATH" "$DMG_STAGING/$APP_NAME.app"
+  ln -s /Applications "$DMG_STAGING/Applications"
+  rm -f "$ROOT_DIR/dist/$APP_NAME.dmg"
+  hdiutil create -volname "$APP_NAME" -srcfolder "$DMG_STAGING" -ov -format UDZO "$ROOT_DIR/dist/$APP_NAME.dmg" >/dev/null
+  rm -rf "$DMG_STAGING"
+  echo "    dmg:   $ROOT_DIR/dist/$APP_NAME.dmg ($(du -sh "$ROOT_DIR/dist/$APP_NAME.dmg" | cut -f1))"
+fi
+
 case "${2:-}" in
   run)
     echo "==> launching"

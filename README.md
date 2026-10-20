@@ -24,7 +24,7 @@ Unduh paket aplikasi sesuai sistem operasi Anda dari [GitHub Releases](https://g
 
 | Sistem Operasi | Konsep Tampilan | Format Berkas | Ukuran | Tautan Unduh Langsung |
 | :--- | :--- | :--- | :---: | :--- |
-| 🍏 **macOS** (Apple Silicon M-series & Intel) | **Hardware Notch MacBook** | `.zip` (App bundle) | ~5.1 MB | [**Unduh untuk macOS**](https://github.com/dendyadinirwana/nilaikinerja/releases/download/v1.0.0/NilaiKinerja.zip) |
+| 🍏 **macOS** (Apple Silicon M-series & Intel) | **Hardware Notch MacBook** | `.dmg` (Disk Image) | **2.0 MB** | [**Unduh .dmg (macOS)**](https://github.com/dendyadinirwana/nilaikinerja/releases/download/v1.0.0/NilaiKinerja.dmg) |
 | 🪟 **Windows** (Windows 10 / 11 64-bit) | **Top-Center Floating Island** | `.exe` (Setup NSIS) | **1.52 MB** | [**Unduh .exe (Windows)**](https://github.com/dendyadinirwana/nilaikinerja/releases/download/v1.0.0/NilaiKinerja_1.0.0_x64-setup.exe) |
 | 🪟 **Windows** (Enterprise / IT Admin) | **Top-Center Floating Island** | `.msi` (MSI Package) | **2.20 MB** | [**Unduh .msi (Windows)**](https://github.com/dendyadinirwana/nilaikinerja/releases/download/v1.0.0/NilaiKinerja_1.0.0_x64_en-US.msi) |
 
@@ -147,10 +147,10 @@ Saat panel sedang terbuka:
 
 ## 🚀 Instalasi & Cara Pakai
 
-### Opsi 1: Unduh Rilis Binary (Direkomendasikan)
-1. Unduh rilis terbaru `NilaiKinerja.zip` dari [GitHub Releases](https://github.com/dendyadinirwana/nilaikinerja/releases/latest).
-2. Ekstrak file zip dan pindahkan **`NilaiKinerja.app`** ke folder **/Applications** (Aplikasi).
-3. Buka **Terminal** dan jalankan perintah ini sekali untuk melepas tanda karantina macOS:
+### Opsi 1: Unduh Rilis Binary DMG (Direkomendasikan)
+1. Unduh rilis terbaru **`NilaiKinerja.dmg`** dari [GitHub Releases](https://github.com/dendyadinirwana/nilaikinerja/releases/latest).
+2. Buka berkas `.dmg`, lalu tarik (*drag and drop*) ikon **NilaiKinerja.app** ke jalan pintas folder **Applications**.
+3. Buka **Terminal** dan jalankan perintah ini sekali untuk melepas tanda karantina macOS (karena codesign ad-hoc open-source):
    ```bash
    xattr -cr /Applications/NilaiKinerja.app
    ```
